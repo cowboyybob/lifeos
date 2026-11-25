@@ -2,6 +2,6 @@
 // The anon key is meant to be public; data is protected by Row Level Security.
 // Never put the service_role key here.
 window.LIFEOS_CONFIG = {
-  supabaseUrl: "",
+  supabaseUrl: "https://iyfebplyhidhpfhqrwvo.supabase.co",
   supabaseAnonKey: ""
 };
