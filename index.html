@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
-<script src="config.js"></script>
+<script src="config.js?v=7"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <title>Life OS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,7 +31,8 @@
 :root.glass.dark{--tileBg:color-mix(in srgb,var(--surf) 55%,transparent);--tileBorder:rgba(255,255,255,.10)}
 *{box-sizing:border-box}
 html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.45;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;transition:background .3s}
+html,body{overflow-x:clip;overscroll-behavior-x:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{touch-action:manipulation;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.45;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;transition:background .3s}
 :root.glass body::before{content:"";position:fixed;inset:-10%;z-index:-1;pointer-events:none;
   background:radial-gradient(38% 32% at 12% 10%,var(--blob1),transparent 70%),radial-gradient(34% 30% at 92% 22%,var(--blob2),transparent 70%),radial-gradient(42% 36% at 70% 92%,var(--blob3),transparent 70%),radial-gradient(30% 28% at 8% 80%,var(--blob2),transparent 70%);
   filter:blur(40px);opacity:.75}
@@ -225,6 +226,24 @@ a{color:inherit}
 .ttrow b{font-family:var(--mono);font-size:.8rem;color:var(--sub);text-align:center}
 .slotrow{display:grid;grid-template-columns:30px 1fr 1fr auto;gap:8px;align-items:center}
 .slotrow b{font-family:var(--mono);font-size:.8rem;color:var(--sub);text-align:center}
+.ttdays{display:none;gap:4px;overflow-x:auto}
+.ttdays button{flex:1;min-width:42px;padding:8px 0;border-radius:12px;font-size:.8rem;font-weight:800;background:color-mix(in srgb,var(--ink) 6%,transparent);color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:2px}
+.ttdays button small{font-size:.62rem;font-weight:700;opacity:.6}
+.ttdays button[aria-pressed=true]{background:var(--hero);color:var(--heroInk)}
+@media (max-width:760px){
+  input,textarea,select{font-size:16px!important}
+  .ttwrap.ttgrid{display:none}
+  .ttdays{display:flex}
+  .slotrow{grid-template-columns:22px 1fr 1fr 28px;gap:6px}
+  .slotrow input{padding-left:8px;padding-right:4px;min-width:0}
+  .mgrid .mc textarea{padding:8px 4px;line-height:1.15}
+}
+.menu{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.menu button{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:12px;border-radius:18px;background:color-mix(in srgb,var(--ink) 5%,transparent);color:var(--ink);text-align:left;font-weight:800;font-size:.84rem;line-height:1.15;min-height:84px}
+.menu button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.menu button small{font-weight:600;font-size:.68rem;color:var(--sub)}
+.menu button.hi{background:var(--hero);color:var(--heroInk)}.menu button.hi small{color:color-mix(in srgb,var(--heroInk) 70%,transparent)}
+.menu-h{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;opacity:.6;margin:6px 2px 0}
 .wkbadge{display:inline-block;padding:3px 10px;border-radius:99px;background:var(--hero);color:var(--heroInk);font-size:.72rem;font-weight:800}
 .gap button{justify-self:start;background:transparent;color:var(--sub);font-size:.74rem;font-weight:700;padding:3px 8px;border-radius:10px}
 .gap button::before{content:"+ ";color:var(--accent)}
@@ -284,7 +303,7 @@ a{color:inherit}
 
 /* bottom tabs */
 nav.tabs{position:fixed;left:0;right:0;bottom:0;padding:0 max(12px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));z-index:5;pointer-events:none}
-nav.tabs .in{pointer-events:auto;max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);align-items:center;background:var(--hero);color:var(--heroInk);border-radius:24px;padding:6px;box-shadow:0 10px 30px -10px rgba(0,0,0,.35)}
+nav.tabs .in{pointer-events:auto;max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);align-items:center;background:var(--hero);color:var(--heroInk);border-radius:24px;padding:6px;box-shadow:0 10px 30px -10px rgba(0,0,0,.35)}
 :root.glass nav.tabs .in{background:color-mix(in srgb,var(--hero) 82%,transparent);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 nav.tabs button{background:none;border-radius:18px;padding:8px 2px;font-size:.64rem;font-weight:700;color:color-mix(in srgb,var(--heroInk) 62%,transparent);display:flex;flex-direction:column;align-items:center;gap:3px}
 nav.tabs svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -463,7 +482,7 @@ const dirOf=id=>S.dirs.find(d=>d.id===id)||{name:"Без направления"
 const cv=c=>`var(--c${c??7})`;
 function toast(t){document.querySelectorAll(".toast").forEach(x=>x.remove());const el=document.createElement("div");el.className="toast";el.setAttribute("role","status");el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),1800)}
 function greet(){const h=new Date().getHours();return h<5?"Доброй ночи":h<12?"Доброе утро":h<18?"Добрый день":"Добрый вечер"}
-function welcome(){return S.example?`<section class="welcome"><h2>Это пример чужого дня</h2><p>Настрой Life OS под себя: свои направления жизни, цели и опорные точки дня. Это займёт минуту.</p><div class="row"><button data-act="onboard">Настроить под себя</button>${SB?`<button class="ghost" data-act="opensettings">Уже есть аккаунт? Войти</button>`:""}</div></section>`:""}
+function welcome(){return S.example?`<section class="welcome"><h2>Это пример чужого дня</h2><p>Настрой Life OS под себя: свои направления жизни, цели и опорные точки дня. Это займёт минуту.</p><div class="row"><button data-act="onboard">Настроить под себя</button>${SB?`<button class="ghost" data-act="openlogin">Уже есть аккаунт? Войти</button>`:""}</div></section>`:""}
 function anchorsFor(d){
   const p=S.profile,out=[];
   if(p.wake)out.push({id:"wake",name:"Подъём",m:toMin(p.wake),kind:"fixed"});
@@ -783,7 +802,8 @@ function renderTT(){
     <div class="spread"><div><b>Числитель и знаменатель</b><div class="small muted">Недели чередуются</div></div><input type="checkbox" data-act="ttalt" ${t.alt?"checked":""} aria-label="Числитель и знаменатель"></div>
     ${t.alt?`<div class="spread"><span class="small" style="font-weight:700">Эта неделя</span><div class="seg"><button aria-pressed="${nowWk==="num"}" data-act="ttnow" data-w="num">Числитель</button><button aria-pressed="${nowWk==="den"}" data-act="ttnow" data-w="den">Знаменатель</button></div></div>`:""}</section>
   <section class="card stack"><div class="spread"><h2>${t.alt?(wk==="num"?"Числитель":"Знаменатель"):"Неделя"}</h2>${t.alt?`<div class="seg"><button aria-pressed="${wk==="num"}" data-act="ttview" data-w="num">Числитель</button><button aria-pressed="${wk==="den"}" data-act="ttview" data-w="den">Знаменатель</button></div>`:""}</div>
-    <div class="ttwrap"><table class="tt" aria-label="Расписание">${head}${rows}</table></div>
+    <div class="ttdays" role="group" aria-label="День недели">${DOW.map((d,i)=>{const c=Object.values(grid[i]||{}).filter(v=>v&&String(v).trim()).length;return `<button aria-pressed="${i===ttDay}" data-act="ttpick" data-d="${i}">${d}<small>${c?c+" п.":"—"}</small></button>`}).join("")}</div>
+    <div class="ttwrap ttgrid"><table class="tt" aria-label="Расписание">${head}${rows}</table></div>
     <h3 style="margin:6px 0 0">${DOWF[ttDay]}</h3>
     ${t.slots.map((sl,i)=>`<div class="ttrow"><b>${i+1}</b><input aria-label="${i+1} пара" placeholder="${esc(sl.s)}–${esc(sl.e)} · предмет" data-act="ttcell" data-d="${ttDay}" data-i="${i}" value="${esc(dayRow[i]||"")}"></div>`).join("")}
     ${t.alt?`<div class="row"><button class="soft small" data-act="ttcopy">Скопировать ${wk==="num"?"в знаменатель":"в числитель"}</button><button class="ghost small" data-act="ttclear">Очистить ${wk==="num"?"числитель":"знаменатель"}</button></div>`:`<button class="ghost small" data-act="ttclear">Очистить неделю</button>`}</section>
@@ -816,8 +836,8 @@ function renderSettings(){
       <div class="label">Поправка, мин</div><div class="grid3">${PRAYERS.map(([id,n])=>`<div class="field"><label class="small" for="adj-${id}">${n} <span class="mono muted">${fromMin(pt[id])}</span></label><input id="adj-${id}" type="number" step="1" data-act="adj" data-id="${id}" value="${pr.method.adj[id]||0}"></div>`).join("")}</div>
       <p class="small muted" style="margin:0">Это астрономический расчёт. Сверь с муфтиятом своего города и при необходимости поправь на несколько минут.</p>`:""}</section>
   <section class="card stack"><div class="spread"><div><h2>Расписание пар</h2><div class="small muted">${p.tt&&p.tt.on?"Пары стоят в дне"+(p.tt.alt?" · сейчас "+WKN[weekKind(new Date())]:""):"Уроки и пары сами встают в день. Есть числитель и знаменатель."}</div></div><button class="soft" data-act="opentt">Открыть</button></div></section>
-  <section class="card stack"><div class="spread"><div><h2>Напоминания</h2><div class="small muted">За 5 минут до блока, пары и намаза, и когда кончился фокус. Работает, пока Life OS открыт; фоновые придут вместе с Telegram-ботом.</div></div><input type="checkbox" data-act="snotif" ${(S.ui||{}).notif?"checked":""} aria-label="Напоминания"></div></section>
-  <section class="card stack"><div class="spread"><h2>Цвета</h2><label class="row small" for="s-glass" style="font-weight:700">Стекло <input type="checkbox" id="s-glass" data-act="sglass" ${(S.ui||{}).glass!==false?"checked":""}></label></div>
+  <section class="card stack" id="s-notif"><div class="spread"><div><h2>Напоминания</h2><div class="small muted">За 5 минут до блока, пары и намаза, и когда кончился фокус. Работает, пока Life OS открыт; фоновые придут вместе с Telegram-ботом.</div></div><input type="checkbox" data-act="snotif" ${(S.ui||{}).notif?"checked":""} aria-label="Напоминания"></div></section>
+  <section class="card stack" id="s-colors"><div class="spread"><h2>Цвета</h2><label class="row small" for="s-glass" style="font-weight:700">Стекло <input type="checkbox" id="s-glass" data-act="sglass" ${(S.ui||{}).glass!==false?"checked":""}></label></div>
     <div class="pals">${Object.entries(PALETTES).map(([id,p])=>`<button class="pal" style="--pbg:${p.bg};--pink:${p.ink}" aria-pressed="${((S.ui||{}).palette||"berry")===id}" data-act="palette" data-id="${id}"><span class="sw"><i style="background:${p.hero}"></i><i style="background:${p.t1}"></i><i style="background:${p.t2}"></i></span><b>${p.name}</b></button>`).join("")}</div></section>
   <section class="card stack"><h2>Направления жизни</h2>
     ${S.dirs.map(d=>`<div class="row" style="flex-wrap:nowrap"><button class="icon-btn" aria-label="Сменить цвет" data-act="dcolor" data-id="${d.id}"><span class="dot" style="--c:${cv(d.c)};width:16px;height:16px"></span></button><input aria-label="Название" data-act="dname" data-id="${d.id}" value="${esc(d.name)}"><button class="icon-btn" aria-label="Удалить направление" data-act="ddel" data-id="${d.id}">×</button></div>`).join("")}
@@ -825,10 +845,10 @@ function renderSettings(){
   <section class="card stack"><div class="spread"><h2>Где хранится план</h2>${syncPill()}</div>
     ${!SB?`<p class="small muted" style="margin:0">План хранится только в этом браузере.</p>`:UID?`<p class="small muted" style="margin:0">Ты вошёл как <b>${esc(EMAIL)}</b>. План сохраняется в аккаунте и открывается на всех твоих устройствах. Другие люди его не видят.</p><button data-act="signout">Выйти</button>`:
     `<p class="small muted" style="margin:0">Сейчас план только в этом браузере. Войди по почте, чтобы он был на телефоне и компьютере. Пароль не нужен: придёт ссылка для входа.</p>
-    <form id="loginform" class="grid2" style="grid-template-columns:1fr auto"><input id="login-email" type="email" required placeholder="you@example.com" autocomplete="email" aria-label="Почта"><button class="primary" type="submit">Получить ссылку</button></form>`}
+    <button class="primary" data-act="openlogin">Войти по почте</button>`}
     <button data-act="onboard">Пройти настройку заново</button></section>
-  <section class="card stack"><div class="spread"><div><h2>Telegram-бот</h2><div class="small muted" id="tgstat">${!CFG.telegramBot?"Скоро: план дня утром, напоминания о блоках и парах, добавление блоков из чата.":!UID?"Войди по почте выше, и бот сможет присылать план и напоминания.":"План утром, напоминания за 5–10 минут, /add прямо из чата."}</div></div>${CFG.telegramBot&&UID?`<button class="soft" data-act="tglink">Подключить</button>`:""}</div></section>
-  <section class="card stack"><h2>Что-то не работает?</h2><p class="small muted" style="margin:0">Напиши автору, разберёмся.</p>
+  <section class="card stack" id="s-tg"><div class="spread"><div><h2>Telegram-бот</h2><div class="small muted" id="tgstat">${!CFG.telegramBot?"Скоро: план дня утром, напоминания о блоках и парах, добавление блоков из чата.":!UID?"Войди по почте выше, и бот сможет присылать план и напоминания.":"План утром, напоминания за 5–10 минут, /add прямо из чата."}</div></div>${CFG.telegramBot&&UID?`<button class="soft" data-act="tglink">Подключить</button>`:""}</div></section>
+  <section class="card stack" id="s-help"><h2>Что-то не работает?</h2><p class="small muted" style="margin:0">Напиши автору, разберёмся.</p>
     <div class="row"><a class="chip" href="https://t.me/sn14kn" target="_blank" rel="noopener">Telegram @sn14kn</a><a class="chip" href="https://wa.me/996597189464" target="_blank" rel="noopener">WhatsApp +996 597 189 464</a></div></section></div>`;
 }
 
@@ -873,6 +893,41 @@ function finishOB(){
   OB=null;layer.innerHTML="";lastSent={};save();tab="today";cur=new Date();render();toast("Готово. Добавь первый блок дня");
 }
 
+/* ---------- login page ---------- */
+let loginEmail="",loginSent=false;
+function renderLogin(){
+  if(!SB)return `<header class="phead"><div><h1>Вход</h1></div></header><div class="narrow"><section class="card"><p class="muted" style="margin:0">Вход сейчас недоступен. План хранится в этом браузере.</p></section></div>`;
+  if(UID)return `<header class="phead"><div><div class="label">аккаунт</div><h1>Ты <em>вошёл</em></h1></div></header><div class="stack-lg narrow"><section class="card stack"><p style="margin:0">Почта: <b>${esc(EMAIL)}</b>. План сохраняется в аккаунте и открывается на любом устройстве.</p><div class="row"><button class="primary" data-tab="today">К плану</button><button class="ghost" data-act="signout">Выйти</button></div></section></div>`;
+  return `<header class="phead"><div><div class="label">аккаунт</div><h1>Вход в <em>аккаунт</em></h1></div></header>
+  <div class="stack-lg narrow">
+  <section class="card stack"><h2>1. Почта</h2><p class="small muted" style="margin:0">Пароль не нужен. На почту придёт письмо со ссылкой для входа.</p>
+    <form id="loginform" class="stack"><input id="login-email" type="email" required placeholder="you@example.com" autocomplete="email" inputmode="email" aria-label="Почта" value="${esc(loginEmail)}"><button class="primary block" type="submit">${loginSent?"Отправить ещё раз":"Получить письмо"}</button></form></section>
+  <section class="card stack"><h2>2. Ссылка из письма</h2><p class="small muted" style="margin:0">Можно просто нажать ссылку в письме. Если она открылась не в том браузере или в приложении почты, скопируй ссылку (долгое нажатие → «Копировать ссылку») и вставь сюда. Подойдёт и код из письма, если он там есть.</p>
+    <form id="linkform" class="stack"><textarea id="login-link" rows="3" placeholder="https://…supabase.co/auth/v1/verify?token=…  или код" aria-label="Ссылка или код из письма"></textarea><button class="primary block" type="submit">Войти</button></form></section>
+  </div>`}
+async function loginWith(raw){raw=(raw||"").trim();if(!raw)return "Вставь ссылку из письма";
+  try{
+    if(/^\d{6,8}$/.test(raw)){if(!loginEmail)return "Сначала впиши почту в шаге 1";const {error}=await SB.auth.verifyOtp({email:loginEmail,token:raw,type:"email"});return error&&error.message}
+    const u=new URL(raw.replace(/&amp;/g,"&"));const h=new URLSearchParams(u.hash.replace(/^#/,"")),q=u.searchParams;
+    if(h.get("access_token")&&h.get("refresh_token")){const {error}=await SB.auth.setSession({access_token:h.get("access_token"),refresh_token:h.get("refresh_token")});return error&&error.message}
+    if(h.get("error_description")||q.get("error_description"))return (h.get("error_description")||q.get("error_description")).replace(/\+/g," ");
+    const th=q.get("token_hash")||q.get("token");if(th){const {error}=await SB.auth.verifyOtp({token_hash:th,type:q.get("type")||"magiclink"});return error&&error.message}
+    if(q.get("code")){const {error}=await SB.auth.exchangeCodeForSession(q.get("code"));return error&&error.message}
+    return "Не похоже на ссылку для входа";
+  }catch(e){return "Не похоже на ссылку для входа"}}
+
+/* ---------- menu ---------- */
+function menuSheet(){const it=(act,ic,t,sub,hi)=>`<button class="${hi?"hi":""}" data-act="mgo" data-go="${act}">${ICONS[ic]}<span>${t}${sub?`<br><small>${sub}</small>`:""}</span></button>`;
+  sheet(`<div class="stack"><h2>Меню</h2>
+  <div class="menu-h">Разделы</div><div class="menu">
+    ${it("today","today","Сегодня","план дня")}${it("tt","tt","Пары","числитель / знам.")}${it("habits","habits","Привычки","")}${it("review","review","Итоги","и год точками")}${it("goals","goals","Цели","1 / 5 / 10 лет")}${it("mandala","mandala","Мандала","64 шага")}</div>
+  <div class="menu-h">Инструменты</div><div class="menu">
+    ${it("focus","focus","Фокус","25 минут",true)}${it("autoplan","auto","Автоплан","в свободные окна")}${it("templates","tpl","Шаблоны","дня")}${it("calsheet","cal","В календарь","Google / Apple")}${it("s-tg","tg","Telegram-бот","@"+(CFG.telegramBot||"скоро"))}${it("s-notif","bell","Напоминания","")}</div>
+  <div class="menu-h">Ещё</div><div class="menu">
+    ${it("s-colors","palette","Цвета","и стекло")}${it("login","help",UID?"Аккаунт":"Войти",UID?"вход выполнен":"по почте")}${it("settings","settings","Настройки","профиль")}${it("s-help","help","Помощь","если не работает")}</div>
+  <button class="ghost" data-act="close">Закрыть</button></div>`)}
+function goSection(id){tab="settings";render();setTimeout(()=>{const el=document.getElementById(id);if(el){el.scrollIntoView({behavior:"smooth",block:"start"});el.animate&&el.animate([{outline:"2px solid var(--accent)"},{outline:"2px solid transparent"}],{duration:1600})}},60)}
+
 /* ---------- block sheet ---------- */
 function sheet(html){layer.innerHTML=`<div class="sheet-bg" data-act="close"><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div></div>`;const f=layer.querySelector("input");if(f)f.focus()}
 function blockSheet(b,pre){
@@ -902,22 +957,34 @@ const ICONS={
  add:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
  review:'<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
  mandala:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>',
+ tt:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 10h18M9 4v17"/></svg>',
+ menu:'<svg viewBox="0 0 24 24"><circle cx="5" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="19" cy="6" r="1.6"/><circle cx="5" cy="13" r="1.6"/><circle cx="12" cy="13" r="1.6"/><circle cx="19" cy="13" r="1.6"/><circle cx="5" cy="20" r="1.6"/><circle cx="12" cy="20" r="1.6"/><circle cx="19" cy="20" r="1.6"/></svg>',
+ focus:'<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg>',
+ auto:'<svg viewBox="0 0 24 24"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>',
+ cal:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M12 14v4M10 16h4"/></svg>',
+ tpl:'<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+ tg:'<svg viewBox="0 0 24 24"><path d="M21 4L3 11l6 2 2 7 3-4 5 4z"/><path d="M9 13l8-6"/></svg>',
+ bell:'<svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg>',
+ palette:'<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 2-1 3-1a4 4 0 0 0 4-4c0-4.5-4-8-9-8z"/><circle cx="8" cy="10" r="1"/><circle cx="12" cy="7" r="1"/><circle cx="16" cy="10" r="1"/></svg>',
+ help:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/></svg>',
  goals:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>',
  settings:'<svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>'
 };
-const TABS=[["today","Сегодня"],["habits","Привычки"],["add",""],["review","Итоги"],["goals","Цели"],["mandala","Мандала"]];
+const TABS=[["today","Сегодня"],["tt","Пары"],["habits","Привычки"],["review","Итоги"],["goals","Цели"],["mandala","Мандала"]];
+const BTABS=[["today","Сегодня"],["tt","Пары"],["add",""],["habits","Привычки"],["menu","Меню"]];
 function render(){
   const y=window.scrollY;applyTheme();
-  const top=`<div class="topbar"><div class="brand"><i>${esc((S.profile.name||"L").trim().charAt(0).toUpperCase()||"L")}</i>Life OS</div><nav class="toptabs" aria-label="Разделы">${TABS.filter(t=>t[0]!=="add").map(([id,n])=>`<button data-tab="${id}" ${id===tab?'aria-current="page"':""}>${n}</button>`).join("")}</nav>
-    <div class="topact"><button class="hot addtop" data-tab="add">+ Блок</button><button class="icon-round" data-act="${tab==="settings"||tab==="tt"?"back":"opensettings"}" aria-label="${tab==="settings"||tab==="tt"?"Закрыть":"Настройки"}">${tab==="settings"||tab==="tt"?'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>':ICONS.settings}</button></div></div>`;
-  app.innerHTML=top+({today:renderToday,habits:renderHabits,review:renderReview,goals:renderGoals,settings:renderSettings,tt:renderTT,mandala:renderMandala})[tab]();
-  document.getElementById("tabs").innerHTML=TABS.map(([id,n])=>id==="add"?`<button class="fab" data-tab="add" aria-label="Добавить блок"><span>${ICONS.add}</span></button>`:`<button data-tab="${id}" ${id===tab?'aria-current="page"':""}>${ICONS[id]}${n}</button>`).join("");
+  const top=`<div class="topbar"><div class="brand"><i>${esc((S.profile.name||"L").trim().charAt(0).toUpperCase()||"L")}</i>Life OS</div><nav class="toptabs" aria-label="Разделы">${TABS.map(([id,n])=>`<button data-tab="${id}" ${id===tab?'aria-current="page"':""}>${n}</button>`).join("")}</nav>
+    <div class="topact"><button class="hot addtop" data-tab="add">+ Блок</button><button class="soft addtop" data-tab="menu">Меню</button><button class="icon-round" data-act="${tab==="settings"?"back":"opensettings"}" aria-label="${tab==="settings"?"Закрыть":"Настройки"}">${tab==="settings"?'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>':ICONS.settings}</button></div></div>`;
+  app.innerHTML=top+({today:renderToday,habits:renderHabits,review:renderReview,goals:renderGoals,settings:renderSettings,tt:renderTT,mandala:renderMandala,login:renderLogin})[tab]();
+  document.getElementById("tabs").innerHTML=BTABS.map(([id,n])=>id==="add"?`<button class="fab" data-tab="add" aria-label="Добавить блок"><span>${ICONS.add}</span></button>`:`<button data-tab="${id}" ${id===tab?'aria-current="page"':""}>${ICONS[id]}${n}</button>`).join("");
   window.scrollTo(0,y);
   const hw=document.getElementById("hwrap");if(hw){hw.style.scrollBehavior="auto";hw.scrollLeft=hwLeft!=null?hwLeft:+hw.dataset.now;hw.style.scrollBehavior="";hw.onscroll=()=>{hwLeft=hw.scrollLeft}}
 }
 let hwLeft=null;
 document.addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(!b)return;
   if(b.dataset.tab==="add"){if(tab!=="today"){tab="today";render()}blockSheet();return}
+  if(b.dataset.tab==="menu"){menuSheet();return}
   tab=b.dataset.tab;if(tab!=="review")cur=new Date();render();window.scrollTo(0,0)});
 const rev=()=>{const d=day();d.review=d.review||{};d.review.energy=d.review.energy||{};d.review.dirs=d.review.dirs||{};return d.review};
 const dirUsed=id=>S.habits.some(h=>h.dir===id)||Object.values(S.days).some(x=>(x.blocks||[]).some(b=>b.dir===id));
@@ -928,6 +995,7 @@ document.addEventListener("click",e=>{
   if(a==="day"){cur=addDays(cur,+el.dataset.n);render()}
   else if(a==="today"){cur=new Date();render()}
   else if(a==="pick"){const[y,m,dd]=el.dataset.k.split("-").map(Number);cur=new Date(y,m-1,dd);render()}
+  else if(a==="openlogin"){tab="login";render();window.scrollTo(0,0)}
   else if(a==="opensettings"){tab="settings";render();window.scrollTo(0,0)}
   else if(a==="back"){tab="today";render()}
   else if(a==="opentt"){tab="tt";render();window.scrollTo(0,0)}
@@ -939,6 +1007,11 @@ document.addEventListener("click",e=>{
   else if(a==="focusstop"){if(F&&!F.done){const used=Math.round((F.dur-fLeft())/60);if(used>=1){const d=day(F.date);d.focus=(d.focus||0)+used;save()}}F=null;fSave();focusHide();render()}
   else if(a==="focusdoneblock"){const d=day(F.date),b=d.blocks.find(x=>x.id===F.blockId);if(b)b.done=true;save();F=null;fSave();focusHide();render();toast("Блок отмечен")}
   else if(a==="autoplan"){autoPlan()}
+  else if(a==="mgo"){const g=el.dataset.go;layer.innerHTML="";
+    if(["today","tt","habits","review","goals","mandala","settings","login"].includes(g)){tab=g;if(g!=="review")cur=new Date();render();window.scrollTo(0,0)}
+    else if(g==="focus"){focusStart(25,"Фокус")}
+    else if(g==="autoplan"||g==="templates"||g==="calsheet"){if(tab!=="today"){tab="today";render()}({autoplan:autoPlan,templates:templatesSheet,calsheet:calSheet})[g]()}
+    else goSection(g)}
   else if(a==="sview"){S.ui={...(S.ui||{}),sview:el.dataset.v};save();render();const w=document.getElementById("hwrap");if(w){w.style.scrollBehavior="auto";w.scrollLeft=+w.dataset.now;w.style.scrollBehavior=""}}
   else if(a==="tglink"){(async()=>{if(!SB||!UID)return;const code=Array.from(crypto.getRandomValues(new Uint8Array(9)),b=>"abcdefghijkmnpqrstuvwxyz23456789"[b%32]).join("");
     const w=window.open("about:blank","_blank");
@@ -1036,7 +1109,9 @@ document.addEventListener("input",e=>{
   else if(a==="ttcell"){const t=ttOf(),w=t.alt?(ttView||"num"):"num";t[w]=t[w]||{};const r=t[w][ds.d]=t[w][ds.d]||{};if(el.value.trim())r[ds.i]=el.value;else delete r[ds.i];if(!t.alt){t.den=t.den||{};t.den[ds.d]={...r}}save();
     const cell=document.querySelector(`.tt button[data-d="${ds.d}"]`);const btns=document.querySelectorAll(`.tt tr:nth-child(${+ds.i+2}) td button`);const b=btns[+ds.d];if(b){b.textContent=el.value;b.classList.toggle("has",!!el.value.trim())}}
 });
-document.addEventListener("submit",async e=>{if(e.target.id!=="loginform")return;e.preventDefault();const em=document.getElementById("login-email").value.trim();const err=await signIn(em);toast(err?"Не получилось отправить: "+err.message:"Ссылка для входа отправлена на "+em)});
+document.addEventListener("submit",async e=>{
+  if(e.target.id==="linkform"){e.preventDefault();const err=await loginWith(document.getElementById("login-link").value);if(err)toast(err);else{toast("Готово, ты вошёл");tab="today";render()}return}
+  if(e.target.id!=="loginform")return;e.preventDefault();const em=document.getElementById("login-email").value.trim();loginEmail=em;const err=await signIn(em);if(!err){loginSent=true;if(tab==="login")render()}toast(err?"Не получилось отправить: "+err.message:"Письмо отправлено на "+em)});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!layer.querySelector(".full"))layer.innerHTML="";if(e.key==="Enter"&&e.target.id==="ob-custom"){e.preventDefault();document.querySelector('[data-act="obcustom"]').click()}});
 render();
 if(S.example){let seen=false;try{seen=localStorage.getItem(KEY+".seen")==="1";localStorage.setItem(KEY+".seen","1")}catch(e){seen=true}if(!seen)onboard()}
@@ -1044,6 +1119,8 @@ connect();
 if(F){focusShow();if(F.done)focusDraw()}
 })();
 </script>
-<script>if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));</script>
+<script>if("serviceWorker" in navigator){const had=!!navigator.serviceWorker.controller;let reloaded=false;
+navigator.serviceWorker.addEventListener("controllerchange",()=>{if(had&&!reloaded){reloaded=true;location.reload()}});
+addEventListener("load",()=>navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>{r.update();document.addEventListener("visibilitychange",()=>{if(!document.hidden)r.update()})}).catch(()=>{}))}</script>
 </body>
 </html>
