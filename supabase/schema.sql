@@ -11,3 +11,7 @@ create policy "own rows: read"   on public.lifeos_docs for select using (auth.ui
 create policy "own rows: insert" on public.lifeos_docs for insert with check (auth.uid() = user_id);
 create policy "own rows: update" on public.lifeos_docs for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "own rows: delete" on public.lifeos_docs for delete using (auth.uid() = user_id);
+
+-- Expose the table to the Data API for signed-in users only (RLS above still limits rows).
+grant select, insert, update, delete on public.lifeos_docs to authenticated;
+revoke all on public.lifeos_docs from anon;
