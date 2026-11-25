@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Политика конфиденциальности · Life OS</title>
+<meta name="theme-color" content="#4A1030">
+<link rel="icon" href="icons/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap">
+<style>
+:root{--bg:#FBF0F2;--ink:#3A0E22;--sub:#8A5A6C;--surf:#FFFFFF;--line:rgba(58,14,34,.10);--hero:#4A1030;--heroInk:#FFF3F6;--accent:#E0336E}
+@media (prefers-color-scheme:dark){:root{--bg:#1A0D14;--ink:#FBE9F0;--sub:#C79AAD;--surf:#26131D;--line:rgba(251,233,240,.12);--hero:#FFC3D2;--heroInk:#3A0E22;--accent:#FF6F9C}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.6}
+main{max-width:720px;margin:0 auto;padding:28px 16px 64px}
+a{color:var(--accent)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:28px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;text-decoration:none;color:var(--ink)}
+.brand i{width:34px;height:34px;border-radius:11px;background:var(--hero);color:var(--heroInk);display:grid;place-items:center;font-style:normal}
+.back{padding:10px 16px;border-radius:14px;background:var(--surf);border:1px solid var(--line);text-decoration:none;color:var(--ink);font-weight:700;font-size:.9rem}
+h1{font-size:clamp(1.9rem,6vw,2.6rem);line-height:1.1;letter-spacing:-.03em;margin:0 0 8px}
+.date{color:var(--sub);font-size:.9rem;margin:0 0 24px}
+section{background:var(--surf);border:1px solid var(--line);border-radius:22px;padding:18px 20px;margin-bottom:12px}
+h2{font-size:1.1rem;margin:0 0 6px;letter-spacing:-.01em}
+p{margin:6px 0}
+ul{margin:6px 0;padding-left:20px}
+li{margin:4px 0}
+.lead{font-size:1.05rem}
+.muted{color:var(--sub);font-size:.9rem}
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><a class="brand" href="./"><i>L</i>Life OS</a><a class="back" href="./">← К плану</a></div>
+  <h1>Политика конфиденциальности</h1>
+  <p class="date">Действует с 25 ноября 2026 года</p>
+
+  <section>
+    <p class="lead">Коротко: мы храним только то, что нужно, чтобы твой план работал. Мы не продаём данные, не показываем рекламу и не ставим трекеры. Удалить свои данные можно в любой момент.</p>
+  </section>
+
+  <section>
+    <h2>Кто отвечает за данные</h2>
+    <p>Life OS сделал и поддерживает автор проекта. Связаться: <a href="https://t.me/sn14kn" target="_blank" rel="noopener">Telegram</a> или <a href="https://wa.me/996597189464" target="_blank" rel="noopener">WhatsApp</a>.</p>
+  </section>
+
+  <section>
+    <h2>Какие данные мы храним</h2>
+    <ul>
+      <li><b>Почта</b>, если ты входишь в аккаунт. Она нужна только для входа.</li>
+      <li><b>Твой план</b>: имя, которое ты указал, время подъёма и сна, направления, цели, привычки, блоки дня, расписание пар, Мандала, итоги дня, город для времени намаза и настройки вида.</li>
+      <li><b>Telegram</b>, если ты подключил бота: номер чата и часовой пояс, чтобы присылать план и напоминания.</li>
+      <li><b>В этом браузере</b> (localStorage) хранится копия плана, чтобы сайт работал без интернета. Если ты не входил в аккаунт, план хранится только там.</li>
+    </ul>
+    <p class="muted">Мы не собираем геолокацию, контакты, файлы или платёжные данные.</p>
+  </section>
+
+  <section>
+    <h2>Зачем</h2>
+    <p>Только чтобы показывать и синхронизировать твой план на твоих устройствах, присылать письмо для входа и, если ты сам подключил бота, сообщения в Telegram. Никакой аналитики и рекламы.</p>
+  </section>
+
+  <section>
+    <h2>Кто ещё участвует</h2>
+    <ul>
+      <li><b>Supabase</b>: база данных и вход. Доступ к записям защищён: каждый видит только свои данные.</li>
+      <li><b>GitHub Pages</b>: хостинг сайта. Как любой сервер, он может видеть технические данные запроса, например IP-адрес.</li>
+      <li><b>Google (Gmail)</b>: через него уходят письма для входа.</li>
+      <li><b>Telegram</b>: только если ты подключил бота.</li>
+      <li><b>jsDelivr и Google Fonts</b>: загрузка библиотеки и шрифтов.</li>
+      <li><b>muftiyat.kg</b>: наш сервер берёт оттуда время намаза. Твои данные туда не передаются.</li>
+    </ul>
+    <p>Мы никому не продаём и не передаём твои данные, кроме этих сервисов, и только для работы Life OS.</p>
+  </section>
+
+  <section>
+    <h2>Сколько храним и как удалить</h2>
+    <p>Данные хранятся, пока у тебя есть аккаунт. В Life OS открой <b>Настройки → Удалить мои данные</b>, и план удалится из базы, а бот отключится. Чтобы полностью удалить аккаунт вместе с почтой, напиши автору, и мы удалим его в течение 7 дней.</p>
+    <p>Копию в браузере можно стереть, очистив данные сайта в настройках браузера.</p>
+  </section>
+
+  <section>
+    <h2>Безопасность</h2>
+    <p>Соединение шифруется (HTTPS). Вход без пароля: по ссылке из письма. Доступ к базе ограничен правилами, по которым каждый пользователь видит только свои записи.</p>
+  </section>
+
+  <section>
+    <h2>Дети</h2>
+    <p>Если тебе меньше 14 лет, пользуйся Life OS вместе с родителями.</p>
+  </section>
+
+  <section>
+    <h2>Изменения</h2>
+    <p>Если политика изменится, мы обновим эту страницу и дату вверху.</p>
+  </section>
+</main>
+</body>
+</html>

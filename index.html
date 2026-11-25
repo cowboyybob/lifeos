@@ -881,7 +881,9 @@ function renderSettings(){
     <button data-act="onboard">Пройти настройку заново</button></section>
   <section class="card stack" id="s-tg"><div class="spread"><div><h2>Telegram-бот</h2><div class="small muted" id="tgstat">${!CFG.telegramBot?"Скоро: план дня утром, напоминания о блоках и парах, добавление блоков из чата.":!UID?"Войди по почте выше, и бот сможет присылать план и напоминания.":"План утром, напоминания за 5–10 минут, /add прямо из чата."}</div></div>${CFG.telegramBot&&UID?`<button class="soft" data-act="tglink">Подключить</button>`:""}</div></section>
   <section class="card stack" id="s-help"><h2>Что-то не работает?</h2><p class="small muted" style="margin:0">Напиши автору, разберёмся.</p>
-    <div class="row"><a class="chip" href="https://t.me/sn14kn" target="_blank" rel="noopener">Написать в Telegram</a><a class="chip" href="https://wa.me/996597189464" target="_blank" rel="noopener">Написать в WhatsApp</a></div></section></div>`;
+    <div class="row"><a class="chip" href="https://t.me/sn14kn" target="_blank" rel="noopener">Написать в Telegram</a><a class="chip" href="https://wa.me/996597189464" target="_blank" rel="noopener">Написать в WhatsApp</a></div></section>
+  <section class="card stack" id="s-privacy"><h2>Данные и конфиденциальность</h2><p class="small muted" style="margin:0">Мы храним только твой план и почту для входа. Без рекламы и трекеров.</p>
+    <div class="row"><a class="chip" href="privacy.html">Политика конфиденциальности</a>${UID?`<button class="ghost small" style="color:var(--warn)" data-act="delask">Удалить мои данные</button>`:""}</div></section></div>`;
 }
 
 /* ---------- onboarding ---------- */
@@ -936,6 +938,7 @@ function renderLogin(){
     <form id="loginform" class="stack"><input id="login-email" type="email" required placeholder="you@example.com" autocomplete="email" inputmode="email" aria-label="Почта" value="${esc(loginEmail)}"><button class="primary block" type="submit">${loginSent?"Отправить ещё раз":"Получить письмо"}</button></form></section>
   <section class="card stack"><h2>2. Ссылка из письма</h2><p class="small muted" style="margin:0">Можно просто нажать ссылку в письме. Если она открылась не в том браузере или в приложении почты, скопируй ссылку (долгое нажатие → «Копировать ссылку») и вставь сюда. Подойдёт и код из письма, если он там есть.</p>
     <form id="linkform" class="stack"><textarea id="login-link" rows="3" placeholder="https://…supabase.co/auth/v1/verify?token=…  или код" aria-label="Ссылка или код из письма"></textarea><button class="primary block" type="submit">Войти</button></form></section>
+  <p class="small muted">Входя, ты соглашаешься с <a href="privacy.html">политикой конфиденциальности</a>.</p>
   </div>`}
 async function loginWith(raw){raw=(raw||"").trim();if(!raw)return "Вставь ссылку из письма";
   try{
@@ -948,6 +951,15 @@ async function loginWith(raw){raw=(raw||"").trim();if(!raw)return "Вставь 
     return "Не похоже на ссылку для входа";
   }catch(e){return "Не похоже на ссылку для входа"}}
 
+/* ---------- delete my data ---------- */
+function delSheet(){sheet(`<div class="stack"><h2>Удалить мои данные?</h2><p class="muted" style="margin:0">Удалятся весь план, цели, привычки, пары и Мандала из аккаунта и с этого устройства, а Telegram-бот отключится. Отменить это нельзя.</p>
+  <button class="primary block" style="background:var(--warn);color:#fff" data-act="deldo">Да, удалить всё</button><button class="ghost" data-act="close">Отмена</button></div>`)}
+async function delAll(){if(!SB||!UID)return;const u=UID;unlive();
+  const a=await SB.from("lifeos_docs").delete().eq("user_id",u);const b=await SB.from("lifeos_tg").delete().eq("user_id",u);
+  if(a.error){toast("Не получилось удалить: "+a.error.message);live();return}
+  try{localStorage.removeItem(KEY);localStorage.removeItem("lifeos.focus")}catch(e){}
+  lastSent={};S=example();layer.innerHTML="";await SB.auth.signOut();UID=null;setSync("local");tab="today";render();toast("Данные удалены");onboard()}
+
 /* ---------- menu ---------- */
 function menuSheet(){const it=(act,ic,t,sub,hi)=>`<button class="${hi?"hi":""}" data-act="mgo" data-go="${act}">${ICONS[ic]}<span>${t}${sub?`<br><small>${sub}</small>`:""}</span></button>`;
   sheet(`<div class="stack"><h2>Меню</h2>
@@ -956,7 +968,7 @@ function menuSheet(){const it=(act,ic,t,sub,hi)=>`<button class="${hi?"hi":""}" 
   <div class="menu-h">Инструменты</div><div class="menu">
     ${it("focus","focus","Фокус","25 минут",true)}${it("autoplan","auto","Автоплан","в свободные окна")}${it("templates","tpl","Шаблоны","дня")}${it("calsheet","cal","В календарь","Google / Apple")}${it("s-tg","tg","Telegram-бот","@"+(CFG.telegramBot||"скоро"))}${it("s-notif","bell","Напоминания","")}</div>
   <div class="menu-h">Ещё</div><div class="menu">
-    ${it("s-colors","palette","Цвета","и стекло")}${it("login","help",UID?"Аккаунт":"Войти",UID?"вход выполнен":"по почте")}${it("settings","settings","Настройки","профиль")}${it("s-help","help","Помощь","если не работает")}</div>
+    ${it("s-colors","palette","Цвета","и стекло")}${it("login","help",UID?"Аккаунт":"Войти",UID?"вход выполнен":"по почте")}${it("settings","settings","Настройки","профиль")}${it("s-help","help","Помощь","если не работает")}${it("s-privacy","tpl","Данные","политика, удаление")}</div>
   <button class="ghost" data-act="close">Закрыть</button></div>`)}
 function goSection(id){tab="settings";render();setTimeout(()=>{const el=document.getElementById(id);if(el){el.scrollIntoView({behavior:"smooth",block:"start"});el.animate&&el.animate([{outline:"2px solid var(--accent)"},{outline:"2px solid transparent"}],{duration:1600})}},60)}
 
@@ -1039,6 +1051,8 @@ document.addEventListener("click",e=>{
   else if(a==="focusstop"){if(F&&!F.done){const used=Math.round((F.dur-fLeft())/60);if(used>=1){const d=day(F.date);d.focus=(d.focus||0)+used;save()}}F=null;fSave();focusHide();render()}
   else if(a==="focusdoneblock"){const d=day(F.date),b=d.blocks.find(x=>x.id===F.blockId);if(b)b.done=true;save();F=null;fSave();focusHide();render();toast("Блок отмечен")}
   else if(a==="autoplan"){autoPlan()}
+  else if(a==="delask"){delSheet()}
+  else if(a==="deldo"){delAll()}
   else if(a==="ttorient"){S.ui={...(S.ui||{}),ttOrient:el.dataset.v};save();render()}
   else if(a==="mgo"){const g=el.dataset.go;layer.innerHTML="";
     if(["today","tt","habits","review","goals","mandala","settings","login"].includes(g)){tab=g;if(g!=="review")cur=new Date();render();window.scrollTo(0,0)}
