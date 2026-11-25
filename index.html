@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0C0C0F">
+<meta name="description" content="Life OS: планировщик дня вокруг важного. Свои направления жизни, привычки, итоги дня и цели.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<title>Life OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@200;300;400;600&family=Cormorant+Garamond:ital,wght@1,500;1,600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: editorial. Desktop = sticky "sky of the day" column on the left + the day's schedule on the right, top nav.
+   Phone = sky on top, schedule below, bottom tab bar. The sky's colour follows the real time of day. */
+:root{
+  --bg:#F3F1EC; --surface:#FBFAF7; --sunken:#E9E6DF; --line:#D9D5CC; --line-strong:#1A1A1F;
+  --fg:#16161B; --muted:#6C6A66; --accent:#FF5B2E; --accent-fg:#FFFFFF; --accent-soft:#FFE3D9;
+  --sun:#C77A00; --sun-soft:#F6EAD3; --warn:#D2361F; --warn-soft:#FBE1DB; --ok:#1F8A4C;
+  --c0:#2F4BD8; --c1:#E5531A; --c2:#1E9450; --c3:#9B3BC0; --c4:#B98500; --c5:#08839A; --c6:#CF2C68; --c7:#6B7280;
+  --font-display:"Unbounded","Onest",system-ui,sans-serif;
+  --font-serif:"Cormorant Garamond",Georgia,"Times New Roman",serif;
+  --font-body:"Onest",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:22px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C0C0F; --surface:#141418; --sunken:#1C1C22; --line:#2A2A31; --line-strong:#F1EFEA;
+  --fg:#F1EFEA; --muted:#9C9A95; --accent:#FF6A3D; --accent-fg:#0C0C0F; --accent-soft:#3A1D14;
+  --sun:#F2B54A; --sun-soft:#2A2217; --warn:#FF7A62; --warn-soft:#38181296; --ok:#5DD48E;
+  --c0:#8C9CFF; --c1:#FF9A62; --c2:#5DD48E; --c3:#D58AF2; --c4:#F2C94C; --c5:#4CC9DF; --c6:#FF7FAE; --c7:#A3A3AD; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C0C0F; --surface:#141418; --sunken:#1C1C22; --line:#2A2A31; --line-strong:#F1EFEA;
+  --fg:#F1EFEA; --muted:#9C9A95; --accent:#FF6A3D; --accent-fg:#0C0C0F; --accent-soft:#3A1D14;
+  --sun:#F2B54A; --sun-soft:#2A2217; --warn:#FF7A62; --warn-soft:#38181296; --ok:#5DD48E;
+  --c0:#8C9CFF; --c1:#FF9A62; --c2:#5DD48E; --c3:#D58AF2; --c4:#F2C94C; --c5:#4CC9DF; --c6:#FF7FAE; --c7:#A3A3AD; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.5;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+.app{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px calc(110px + env(safe-area-inset-bottom,0px))}
+h1,h2,h3{font-family:var(--font-display);font-weight:400;text-wrap:balance;margin:0;letter-spacing:-.02em}
+h1{font-size:clamp(2.1rem,6.4vw,4.4rem);font-weight:300;line-height:1;letter-spacing:-.045em}
+h2{font-size:1.02rem;font-weight:400;letter-spacing:-.01em}
+em,.serif{font-family:var(--font-serif);font-style:italic;font-weight:500;letter-spacing:-.01em}
+h1 em{font-size:1.08em;font-weight:500}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:.82rem}
+.label{font-family:var(--font-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:500}
+.stack{display:flex;flex-direction:column;gap:12px}
+.stack-lg{display:flex;flex-direction:column;gap:22px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.spread{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:9px 16px;font-weight:500;transition:transform .15s,background .15s,border-color .15s}
+button:active{transform:scale(.97)}
+button.primary{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+button.hot{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+button.soft{background:transparent;border-style:dashed}
+button.ghost{background:transparent;border-color:transparent;color:var(--fg);padding:6px 10px;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+button.block{width:100%;padding:15px;font-size:1rem}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{background:transparent;border:1px solid var(--line);border-radius:14px;padding:11px 13px;min-width:0;width:100%}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+textarea{resize:vertical;min-height:56px}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:24px;height:24px;border:1.5px solid var(--fg);border-radius:50%;flex:none;margin:0;display:grid;place-items:center;cursor:pointer;background:transparent;padding:0}
+input[type=checkbox]:checked{background:var(--fg)}
+input[type=checkbox]:checked::after{content:"";width:9px;height:5px;border-left:2px solid var(--bg);border-bottom:2px solid var(--bg);transform:translateY(-1px) rotate(-45deg)}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;padding:4px 10px;border-radius:99px;border:1px solid currentColor;white-space:nowrap;opacity:.85}
+.pill.ok::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok)}
+.pill.warn{color:var(--warn)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--c);display:inline-block;flex:none}
+
+/* top bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:8px 18px}
+.brand{font-family:var(--font-display);font-weight:600;font-size:1.05rem;letter-spacing:-.03em;display:flex;align-items:baseline;gap:2px}
+.brand em{font-weight:600;font-size:1.25em;color:var(--accent)}
+.toptabs{display:none;gap:4px;padding:5px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+.toptabs button{border:none;background:transparent;padding:8px 16px}
+.toptabs button[aria-current=page]{background:var(--fg);color:var(--bg)}
+.topact{display:flex;gap:8px;align-items:center}
+.topact .addtop{display:none}
+.icon-round{width:42px;height:42px;padding:0;display:grid;place-items:center}
+.icon-round svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round}
+
+/* page header */
+.phead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding-block:18px 26px;border-bottom:1px solid var(--line-strong);margin-bottom:26px}
+.phead .label{margin-bottom:12px}
+.narrow{max-width:820px}
+
+/* sky */
+.sky{container-type:inline-size;position:relative;overflow:hidden;border-radius:28px;padding:22px 22px 18px;color:var(--ink);background:linear-gradient(165deg,var(--s1) 0%,var(--s2) 62%,var(--s3) 100%);isolation:isolate}
+.sky::after{content:"";position:absolute;inset:0;z-index:-1;opacity:.22;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.sky .label{color:var(--ink);opacity:.75}
+.sky .greet{font-family:var(--font-display);font-weight:300;font-size:clamp(1.5rem,3.6vw,2.1rem);line-height:1.05;letter-spacing:-.035em;margin-top:10px}
+.sky .greet em{font-size:1.12em}
+.sky .clock{font-family:var(--font-display);font-weight:200;font-size:clamp(4rem,15vw,7rem);font-size:25cqi;line-height:.86;letter-spacing:-.07em;margin-top:18px;font-variant-numeric:tabular-nums}
+.sky .next{margin-top:10px;font-size:.95rem}
+.sky .next b{font-weight:600}
+.arc{width:100%;height:auto;display:block;margin-top:8px}
+.sky .stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid color-mix(in srgb,var(--ink) 35%,transparent);margin-top:6px;padding-top:12px}
+.sky .stats div+div{border-left:1px solid color-mix(in srgb,var(--ink) 25%,transparent);padding-left:12px}
+.sky .stats b{display:block;font-family:var(--font-display);font-weight:300;font-size:1.6rem;letter-spacing:-.04em;line-height:1.1}
+.sky .stats span{font-family:var(--font-mono);font-size:.64rem;text-transform:uppercase;letter-spacing:.1em;opacity:.75}
+.sky .pill{color:var(--ink)}
+
+/* week strip */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.week button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0 8px;border-radius:16px;border:1px solid transparent;background:transparent}
+.week button small{font-family:var(--font-mono);font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.week button span{font-family:var(--font-display);font-weight:300;font-size:1.25rem;letter-spacing:-.04em}
+.week button i{width:4px;height:4px;border-radius:50%;background:transparent}
+.week button i.has{background:var(--fg)}
+.week button[aria-current=date]{border-color:var(--line)}
+.week button.sel{background:var(--fg);color:var(--bg)}
+.week button.sel small{color:var(--bg);opacity:.7}
+.week button.sel i.has{background:var(--accent)}
+
+/* priorities */
+.pri{display:grid;grid-template-columns:34px 1fr;gap:6px;align-items:baseline;border-top:1px solid var(--line)}
+.pri:first-of-type{border-top:none}
+.pri .n{font-family:var(--font-serif);font-style:italic;font-size:1.5rem;color:var(--accent);line-height:1}
+.pri input{border:none;border-radius:0;padding:12px 0;font-size:1.02rem}
+
+/* schedule */
+.sched-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;border-bottom:1px solid var(--line-strong);padding-bottom:14px;margin-bottom:8px}
+.sched-head h2{font-size:clamp(1.6rem,3.4vw,2.4rem);font-weight:300;letter-spacing:-.045em;line-height:1}
+.rail{display:flex;flex-direction:column}
+.ti{display:grid;grid-template-columns:76px 1fr;gap:14px;align-items:start;padding-block:12px;border-bottom:1px solid var(--line)}
+.ti .tm{font-family:var(--font-display);font-weight:300;font-size:1.2rem;letter-spacing:-.04em;padding-top:1px;font-variant-numeric:tabular-nums}
+.ti .tm small{display:block;font-family:var(--font-mono);font-size:.66rem;color:var(--muted);letter-spacing:.02em}
+.ti.anchor .tm{color:var(--sun)}
+.anc{display:flex;align-items:center;gap:12px}
+.anc .nm{font-family:var(--font-serif);font-style:italic;font-weight:600;font-size:1.45rem;line-height:1.1}
+.anc .sub{font-family:var(--font-mono);font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.anc input{margin-left:auto;border-color:var(--sun)}
+.anc input:checked{background:var(--sun)}
+.blk{display:flex;gap:14px;align-items:flex-start;min-width:0}
+.blk .t{flex:1;min-width:0}
+.blk .t b{font-weight:500;font-size:1.08rem;display:block;overflow-wrap:anywhere;line-height:1.3}
+.blk .meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px;font-family:var(--font-mono);font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.blk .tag{display:inline-flex;align-items:center;gap:6px;padding:2px 9px 2px 7px;border-radius:99px;background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--fg)}
+.blk.done .t b{text-decoration:line-through;text-decoration-thickness:1px;color:var(--muted)}
+.ti.clash{background:linear-gradient(90deg,var(--warn-soft),transparent 80%);border-radius:14px;padding-inline:8px;margin-inline:-8px}
+.blk .warnline{font-size:.82rem;color:var(--warn);font-weight:500;margin-top:6px}
+.icon-btn{border:none;background:none;color:var(--muted);padding:2px 8px;font-size:1rem;line-height:1;border-radius:8px}
+.icon-btn:hover{color:var(--fg)}
+.gap{padding-block:6px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:76px 1fr;gap:14px}
+.gap button{justify-self:start;border:none;background:transparent;color:var(--muted);font-family:var(--font-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;padding:6px 0;border-radius:0}
+.gap button:hover{color:var(--accent)}
+.gap button::before{content:"+ ";color:var(--accent)}
+.now{display:grid;grid-template-columns:76px 1fr;gap:14px;align-items:center;margin-block:-1px}
+.now span{font-family:var(--font-mono);font-size:.7rem;color:var(--accent);font-weight:500}
+.now i{height:2px;background:var(--accent);position:relative}
+.now i::before{content:"";position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+
+/* habits */
+.hab{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;padding:16px 0;border-bottom:1px solid var(--line)}
+.hab b{font-weight:500;font-size:1.05rem}
+.cells{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:4px;margin-top:9px;max-width:420px}
+.cells i{aspect-ratio:1;width:100%;border-radius:50%;border:1px solid var(--line);max-width:100%}
+.cells i.on{background:var(--c,var(--fg));border-color:var(--c,var(--fg))}
+.cells i.today{outline:1.5px solid var(--fg);outline-offset:2px}
+.streak{text-align:right}
+.streak b{display:block;font-family:var(--font-display);font-weight:200;font-size:2.2rem;line-height:1;letter-spacing:-.06em}
+.streak small{font-family:var(--font-mono);font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.hint{font-size:.82rem;color:var(--warn);margin-top:3px}
+
+/* review */
+.stat{border-top:1px solid var(--line-strong);padding-top:12px}
+.stat b{font-family:var(--font-display);font-size:clamp(2rem,5vw,3rem);font-weight:200;letter-spacing:-.06em;display:block;line-height:1.05}
+.dirrow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+.seg button{border:none;padding:6px 12px;font-size:.8rem;background:transparent}
+.seg button[aria-pressed=true]{background:var(--fg);color:var(--bg)}
+.scale{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.scale button{padding:9px 0;font-family:var(--font-mono);font-size:.78rem;border-radius:12px}
+.scale button[aria-pressed=true]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.bars{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;align-items:end;height:130px}
+.bars div{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.bars span.b{width:100%;background:var(--fg);border-radius:999px;min-height:6px}
+.bars span.b.cur{background:var(--accent)}
+.bars small{font-family:var(--font-mono);font-size:.66rem;color:var(--muted);text-transform:uppercase}
+.goalcard{border-top:3px solid var(--c)}
+.goalcard h2{font-size:1.4rem;font-weight:300;letter-spacing:-.04em}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+a.chip{color:inherit;text-decoration:none}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:99px;border:1px solid var(--line);background:transparent;font-weight:500;font-size:.92rem;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+
+/* bottom tabs (phone) */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;padding:0 max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));z-index:5;pointer-events:none}
+nav.tabs .in{pointer-events:auto;max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);align-items:center;background:color-mix(in srgb,var(--fg) 94%,transparent);color:var(--bg);border-radius:26px;padding:6px;backdrop-filter:blur(12px)}
+nav.tabs button{border:none;background:none;border-radius:20px;padding:8px 2px;font-size:.66rem;font-weight:500;color:color-mix(in srgb,var(--bg) 60%,transparent);display:flex;flex-direction:column;align-items:center;gap:3px}
+nav.tabs svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+nav.tabs button[aria-current=page]{color:var(--bg)}
+nav.tabs button.fab span{width:46px;height:46px;border-radius:16px;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center}
+nav.tabs button.fab svg{stroke-width:2.2}
+
+/* sheets */
+.sheet-bg{position:fixed;inset:0;background:rgba(8,8,10,.5);backdrop-filter:blur(3px);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:560px;border-radius:28px 28px 0 0;padding:22px max(20px,env(safe-area-inset-right,0px)) calc(22px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));max-height:92%;overflow:auto}
+.sheet h2{font-size:1.7rem;font-weight:300;letter-spacing:-.045em}
+.sheet .grab{width:40px;height:4px;border-radius:4px;background:var(--line);margin:-8px auto 14px}
+.full{position:fixed;inset:0;background:var(--bg);z-index:25;overflow:auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.full .in{max-width:640px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));padding-block:28px 32px;display:flex;flex-direction:column;gap:24px;min-height:100%}
+.full h1{font-size:clamp(2.2rem,7vw,3.6rem)}
+.steps{display:flex;gap:6px}
+.steps i{flex:1;height:2px;background:var(--line)}
+.steps i.on{background:var(--fg)}
+.lead{font-size:1.05rem;color:var(--muted);max-width:44ch;margin:0}
+.listrow{display:grid;grid-template-columns:1fr 120px auto;gap:8px;align-items:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));background:var(--accent);color:var(--accent-fg);padding:10px 18px;border-radius:999px;font-size:.88rem;font-weight:500;z-index:40}
+.welcome{border:1px solid var(--line-strong);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:12px;background:var(--surface)}
+.welcome h2{font-size:1.5rem;font-weight:300;letter-spacing:-.04em}
+.welcome p{margin:0;color:var(--muted)}
+.welcome button{align-self:flex-start}
+
+.tip{border-radius:var(--r);padding:16px 18px;background:var(--sun-soft);display:flex;flex-direction:column;gap:6px}.tip h3{font-family:var(--font-serif);font-style:italic;font-weight:600;font-size:1.45rem;letter-spacing:-.01em}.tip p{margin:0;color:var(--fg);opacity:.85}
+/* today layout */
+.today{display:flex;flex-direction:column;gap:20px}
+.today aside{display:flex;flex-direction:column;gap:16px}
+
+@media (min-width:960px){
+  .app{padding-bottom:48px}
+  .toptabs{display:flex}
+  .topact .addtop{display:inline-flex}
+  nav.tabs{display:none}
+  .today{display:grid;grid-template-columns:minmax(360px,430px) 1fr;gap:48px;align-items:start}
+  .today aside{position:sticky;top:16px}
+  .toast{bottom:32px}
+  .sheet-bg{align-items:center}
+  .sheet{border-radius:28px}
+  .cols2{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+}
+@media (prefers-reduced-motion:no-preference){
+  .sheet{animation:up .25s cubic-bezier(.2,.8,.2,1)}
+  .full .in>*{animation:rise .5s cubic-bezier(.2,.8,.2,1) both}
+  .full .in>*:nth-child(2){animation-delay:.05s}.full .in>*:nth-child(3){animation-delay:.1s}.full .in>*:nth-child(4){animation-delay:.15s}
+  .sky .clock{animation:rise .7s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes up{from{transform:translateY(30px);opacity:.6}}
+  @keyframes rise{from{transform:translateY(14px);opacity:.3}}
+}
+@media (max-width:380px){.grid3{grid-template-columns:1fr 1fr}.listrow{grid-template-columns:1fr 100px auto}.ti,.gap,.now{grid-template-columns:62px 1fr}}
+</style>
+
+
+</head>
+<body>
+<div class="app" id="app"></div>
+<nav class="tabs" aria-label="Разделы"><div class="in" id="tabs"></div></nav>
+<div id="layer"></div>
+
+<script>
+(function(){
+"use strict";
+const KEY="lifeos.public.v1";
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const pad=n=>String(n).padStart(2,"0");
+const dkey=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const toMin=s=>{if(!s)return 0;const[a,b]=s.split(":").map(Number);return a*60+b};
+const fromMin=m=>{m=((Math.round(m)%1440)+1440)%1440;return pad(Math.floor(m/60))+":"+pad(m%60)};
+const dur=m=>{const h=Math.floor(m/60),r=m%60;return (h?h+" ч ":"")+(r?r+" мин":"")};
+const WD=["Вс","Пн","Вт","Ср","Чт","Пт","Сб"];
+const MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+
+/* ---------- prayer times (optional module) ---------- */
+function prayerTimes(date,lat,lng,tz,o){
+  const R=Math.PI/180,sin=x=>Math.sin(x*R),cos=x=>Math.cos(x*R),tan=x=>Math.tan(x*R);
+  const asin=x=>Math.asin(x)/R,acos=x=>Math.acos(Math.max(-1,Math.min(1,x)))/R,acot=x=>Math.atan(1/x)/R,atan2=(y,x)=>Math.atan2(y,x)/R;
+  const fix=(a,b)=>{a=a-b*Math.floor(a/b);return a<0?a+b:a};
+  let Y=date.getFullYear(),M=date.getMonth()+1;const d=date.getDate();if(M<=2){Y--;M+=12}
+  const A=Math.floor(Y/100),B=2-A+Math.floor(A/4);
+  const jd0=Math.floor(365.25*(Y+4716))+Math.floor(30.6001*(M+1))+d+B-1524.5-lng/360;
+  const sun=jd=>{const D=jd-2451545,g=fix(357.529+.98560028*D,360),q=fix(280.459+.98564736*D,360),L=fix(q+1.915*sin(g)+.02*sin(2*g),360),e=23.439-.00000036*D,RA=atan2(cos(e)*sin(L),cos(L))/15;return{decl:asin(sin(e)*sin(L)),eqt:q/15-fix(RA,24)}};
+  const noon=t=>fix(12-sun(jd0+t/24).eqt,24);
+  const angT=(a,t,ccw)=>{const s=sun(jd0+t/24),v=acos((-sin(a)-sin(s.decl)*sin(lat))/(cos(s.decl)*cos(lat)))/15;return noon(t)+(ccw?-v:v)};
+  const asrT=(f,t)=>{const s=sun(jd0+t/24);return angT(-acot(f+tan(Math.abs(lat-s.decl))),t)};
+  let t={fajr:5,sunrise:6,dhuhr:12,asr:13,maghrib:18,isha:18};
+  for(let i=0;i<2;i++){t={fajr:angT(o.fajr,t.fajr,true),sunrise:angT(.833,t.sunrise,true),dhuhr:noon(t.dhuhr),asr:asrT(o.asr,t.asr),maghrib:angT(.833,t.maghrib),isha:angT(o.isha,t.isha)}}
+  const r={};for(const k in t)r[k]=Math.round((t[k]+tz-lng/15)*60+((o.adj||{})[k]||0));return r;
+}
+const PRAYERS=[["fajr","Фаджр"],["sunrise","Восход"],["dhuhr","Зухр"],["asr","Аср"],["maghrib","Магриб"],["isha","Иша"]];
+const CITIES={
+  "Бишкек":{lat:42.8746,lng:74.5698,tz:6},"Ош":{lat:40.5283,lng:72.7985,tz:6},"Алматы":{lat:43.2389,lng:76.8897,tz:5},
+  "Астана":{lat:51.1694,lng:71.4491,tz:5},"Ташкент":{lat:41.2995,lng:69.2401,tz:5},"Душанбе":{lat:38.5598,lng:68.787,tz:5},
+  "Баку":{lat:40.4093,lng:49.8671,tz:4},"Москва":{lat:55.7558,lng:37.6173,tz:3},"Казань":{lat:55.7963,lng:49.1088,tz:3},
+  "Стамбул":{lat:41.0082,lng:28.9784,tz:3},"Берлин":{lat:52.52,lng:13.405,tz:1},"Лондон":{lat:51.5072,lng:-.1276,tz:0}
+};
+const BISHKEK_ADJ={fajr:-1,sunrise:-1,dhuhr:0,asr:2,maghrib:7,isha:0};
+function prayerCfg(city,on){return {on:!!on,city,...CITIES[city],buffer:10,method:{fajr:18,isha:city==="Бишкек"?16:17,asr:2,adj:city==="Бишкек"?{...BISHKEK_ADJ}:{}}}}
+
+/* ---------- presets ---------- */
+const PRESETS=[
+  ["Учёба","Повторение 15 мин"],["Работа","План на завтра"],["Карьера","30 мин на навык"],["Здоровье","Сон 8 часов"],
+  ["Спорт","Зарядка 10 мин"],["Питание","Вода 2 литра"],["Семья","Позвонить родным"],["Друзья","Написать другу"],
+  ["Финансы","Записать расходы"],["Творчество","15 мин практики"],["Духовность","Чтение 10 мин"],["Языки","10 новых слов"],
+  ["Проекты","1 задача по проекту"],["Отдых","Прогулка 20 мин"],["Дом","Уборка 10 мин"],["Чтение","20 страниц"]
+];
+const ANCHOR_IDEAS=[["Обед","13:00"],["Начало учёбы","09:00"],["Начало работы","09:00"],["Ужин","19:00"],["Тренировка","18:00"]];
+
+/* ---------- example ---------- */
+function example(){
+  const t=new Date();
+  const dirs=[["Учёба",0],["Спорт",1],["Здоровье",2],["Проекты",3],["Семья",6]].map(([n,c])=>({id:uid(),name:n,c}));
+  const [U,Sp,Z,P,F]=dirs.map(d=>d.id);
+  const habits=[{id:uid(),name:"Повторение 15 мин",dir:U},{id:uid(),name:"Зарядка 10 мин",dir:Sp},{id:uid(),name:"Сон 8 часов",dir:Z},{id:uid(),name:"Позвонить родным",dir:F}];
+  const days={};const pat=["1101","1111","1010","1111","1110","0110","1111","1011","1111","0100","1101","1111","1110"];
+  for(let i=13;i>=1;i--){const k=dkey(addDays(t,-i)),p=pat[13-i],h={};habits.forEach((x,j)=>{if(p[j]==="1")h[x.id]=true});
+    days[k]={blocks:[{id:uid(),s:"09:00",e:"10:00",t:"Учёба",dir:U,done:true}],priorities:[],habits:h,prayed:{},review:{energy:{m:5+(i%3),d:4+(i%2),e:6},sleep:7+(i%3)*.5,dirs:{},kaizen:""}}}
+  days[dkey(t)]={priorities:["Сдать лабораторную","Тренировка","Лечь до 23:00"],habits:{[habits[0].id]:true},prayed:{},review:null,blocks:[
+    {id:uid(),s:"07:30",e:"08:00",t:"Зарядка и душ",dir:Sp},{id:uid(),s:"09:00",e:"12:30",t:"Пары",dir:U},
+    {id:uid(),s:"14:00",e:"15:30",t:"Лабораторная по физике",dir:U},{id:uid(),s:"15:15",e:"16:00",t:"Созвон по проекту",dir:P},
+    {id:uid(),s:"18:00",e:"19:00",t:"Тренировка",dir:Sp},{id:uid(),s:"20:30",e:"21:00",t:"Звонок родителям",dir:F}]};
+  const goals={};dirs.forEach(d=>goals[d.id]={y1:"",y5:"",y10:""});
+  goals[U]={y1:"Закрыть сессию без троек",y5:"Магистратура за границей",y10:""};goals[Sp]={y1:"Подтягиваться 15 раз",y5:"",y10:""};
+  return {example:true,v:2,profile:{name:"",wake:"07:00",sleep:"23:00",anchors:[{id:uid(),name:"Обед",time:"13:00"}],prayer:prayerCfg("Бишкек",false)},dirs,habits,days,goals};
+}
+
+/* ---------- storage + account sync (Supabase) ---------- */
+function loadLocal(){try{const s=localStorage.getItem(KEY);return s?JSON.parse(s):null}catch(e){return null}}
+let S=loadLocal()||example();
+let DB=null,UID=null,EMAIL="",sync="local",lastSent={},flushT=null,writing=false,dirtyRender=false;
+const CFG=window.LIFEOS_CONFIG||{};
+const SB=(CFG.supabaseUrl&&CFG.supabaseAnonKey&&window.supabase)?window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseAnonKey):null;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(UID&&!S.example){clearTimeout(flushT);flushT=setTimeout(flush,700)}}
+function docsOf(st){const o={state:{v:2,profile:st.profile,dirs:st.dirs,habits:st.habits,goals:st.goals}};for(const k in st.days)o["day-"+k]={date:k,...st.days[k]};return o}
+async function flush(){
+  if(writing){flushT=setTimeout(flush,700);return}writing=true;
+  try{const docs=docsOf(S),rows=[];for(const id in docs){const j=JSON.stringify(docs[id]);if(lastSent[id]!==j)rows.push({user_id:UID,id,body:docs[id],updated_at:new Date().toISOString()})}
+    if(rows.length){const {error}=await SB.from("lifeos_docs").upsert(rows);if(error)throw error;rows.forEach(r=>lastSent[r.id]=JSON.stringify(r.body))}
+    setSync("cloud")}
+  catch(e){setSync("error");if(!flush.warned){flush.warned=1;toast("Не получается сохранить. Если не пройдёт, напиши в Telegram @sn14kn")}}finally{writing=false}
+}
+function syncPill(){const t={cloud:["В аккаунте","ok"],loading:["Загружаю…",""],error:["Нет связи, сохраню позже","warn"],local:["В этом браузере",""]}[sync];return `<span class="pill ${t[1]} syncpill">${t[0]}</span>`}
+function setSync(m){sync=m;document.querySelectorAll(".syncpill").forEach(el=>el.outerHTML=syncPill())}
+async function pull(){
+  if(!SB||!UID)return;setSync("loading");
+  const {data,error}=await SB.from("lifeos_docs").select("id,body").eq("user_id",UID);
+  if(error){setSync("error");return}
+  if(!data.length){setSync("cloud");if(!S.example)save();return}
+  const st={v:2,days:{}};data.forEach(r=>{lastSent[r.id]=JSON.stringify(r.body);const b=JSON.parse(JSON.stringify(r.body));
+    if(r.id==="state")Object.assign(st,b);else if(r.id.startsWith("day-")){delete b.date;st.days[r.id.slice(4)]=b}});
+  setSync("cloud");if(!st.profile)return;st.example=false;
+  if(!S.example&&JSON.stringify(docsOf(st))===JSON.stringify(docsOf(S)))return;
+  S=st;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+  if(layer.querySelector(".full"))layer.innerHTML="";
+  const a=document.activeElement;if(a&&a.closest&&a.closest("#app")&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))dirtyRender=true;else render();
+}
+async function connect(){
+  if(!SB)return;
+  const apply=async session=>{const u=session&&session.user;const was=UID;UID=u?u.id:null;EMAIL=u?u.email:"";DB=UID?SB:null;
+    if(!UID){setSync("local");if(tab==="settings")render();return}
+    if(was!==UID){lastSent={};await pull();if(tab==="settings")render()}};
+  const {data}=await SB.auth.getSession();await apply(data.session);
+  SB.auth.onAuthStateChange((_e,session)=>apply(session));
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&UID&&!writing)pull()});
+}
+async function signIn(email){
+  const {error}=await SB.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});
+  return error;
+}
+async function signOut(){await SB.auth.signOut();UID=null;DB=null;lastSent={};setSync("local");render();toast("Вышел из аккаунта. План остался в этом браузере")}
+document.addEventListener("focusout",()=>{if(dirtyRender)setTimeout(()=>{const a=document.activeElement;if(!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))){dirtyRender=false;render()}},0)});
+
+/* ---------- helpers ---------- */
+let tab="today",cur=new Date();
+const app=document.getElementById("app"),layer=document.getElementById("layer");
+const day=k=>{k=k||dkey(cur);if(!S.days[k])S.days[k]={blocks:[],priorities:[],habits:{},prayed:{},review:null};const d=S.days[k];d.blocks=d.blocks||[];d.priorities=d.priorities||[];d.habits=d.habits||{};d.prayed=d.prayed||{};return d};
+const dirOf=id=>S.dirs.find(d=>d.id===id)||{name:"Без направления",c:7};
+const cv=c=>`var(--c${c??7})`;
+function toast(t){document.querySelectorAll(".toast").forEach(x=>x.remove());const el=document.createElement("div");el.className="toast";el.setAttribute("role","status");el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),1800)}
+function greet(){const h=new Date().getHours();return h<5?"Доброй ночи":h<12?"Доброе утро":h<18?"Добрый день":"Добрый вечер"}
+function welcome(){return S.example?`<section class="welcome"><h2>Это пример чужого дня</h2><p>Настрой Life OS под себя: свои направления жизни, цели и опорные точки дня. Это займёт минуту.</p><div class="row"><button data-act="onboard">Настроить под себя</button>${SB?`<button class="ghost" data-act="opensettings">Уже есть аккаунт? Войти</button>`:""}</div></section>`:""}
+function anchorsFor(d){
+  const p=S.profile,out=[];
+  if(p.wake)out.push({id:"wake",name:"Подъём",m:toMin(p.wake),kind:"fixed"});
+  (p.anchors||[]).forEach(a=>out.push({id:a.id,name:a.name,m:toMin(a.time),kind:"fixed"}));
+  if(p.sleep)out.push({id:"sleep",name:"Отбой",m:toMin(p.sleep),kind:"fixed"});
+  if(p.prayer&&p.prayer.on){const pt=prayerTimes(d,p.prayer.lat,p.prayer.lng,p.prayer.tz,p.prayer.method);PRAYERS.forEach(([id,n])=>out.push({id,name:n,m:pt[id],kind:id==="sunrise"?"info":"prayer"}))}
+  return out;
+}
+function dayProgress(k){const x=S.days[k];if(!x)return 0;const hb=S.habits.length,bl=(x.blocks||[]).length;const tot=hb+bl;if(!tot)return 0;return (S.habits.filter(h=>x.habits&&x.habits[h.id]).length+(x.blocks||[]).filter(b=>b.done).length)/tot}
+
+/* ---------- sky of the day ---------- */
+const SKY=[[0,"#0B1030","#141A45","#1E2257","#EDEBFF"],[300,"#141A45","#2C2E66","#5A4C8C","#F2EEFF"],[390,"#3D3A7A","#C9739A","#F4A77E","#FFFFFF"],
+  [450,"#F08A6A","#F7B98A","#FBE0B6","#1D1420"],[600,"#8EC3F0","#BFE0F7","#EEF6FB","#0F1B2B"],[780,"#5DA9E9","#A8D4F5","#E8F3FB","#0F1B2B"],
+  [960,"#7FA6D9","#F2C38F","#F8DDBC","#1D1420"],[1050,"#3F3A86","#D9657A","#F59A6B","#FFFFFF"],[1140,"#1E1F55","#4A3A7A","#7B4D88","#F2EEFF"],[1260,"#0D1238","#161C4A","#252A62","#EDEBFF"],[1440,"#0B1030","#141A45","#1E2257","#EDEBFF"]];
+function hex(h){return [1,3,5].map(i=>parseInt(h.slice(i,i+2),16))}
+function mix(a,b,t){const x=hex(a),y=hex(b);return "#"+x.map((v,i)=>Math.round(v+(y[i]-v)*t).toString(16).padStart(2,"0")).join("")}
+function skyAt(m){let i=0;while(i<SKY.length-2&&SKY[i+1][0]<=m)i++;const A=SKY[i],B=SKY[i+1],t=(m-A[0])/(B[0]-A[0]);return {s1:mix(A[1],B[1],t),s2:mix(A[2],B[2],t),s3:mix(A[3],B[3],t),ink:t<.5?A[4]:B[4]}}
+function arcSvg(anchors,nowM,show){
+  const W=360,H=118,cx=180,cy=100,r=150;const wake=toMin(S.profile.wake||"06:00"),slp=toMin(S.profile.sleep||"23:00");
+  const span=((slp-wake)+1440)%1440||1440;const pos=m=>{const t=Math.max(0,Math.min(1,(((m-wake)+1440)%1440)/span));const a=Math.PI*(1-t);return [cx+r*Math.cos(a),cy-r*Math.sin(a)*.62]};
+  const ticks=anchors.filter(a=>a.kind!=="info").map(a=>{const[x,y]=pos(a.m);return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.2" fill="currentColor" opacity=".7"/>`}).join("");
+  let sun="";if(show){const t=(((nowM-wake)+1440)%1440)/span;if(t<=1){const[x,y]=pos(nowM);sun=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="15" fill="currentColor" opacity=".18"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="8" fill="currentColor"/>`}}
+  const[x0,y0]=pos(wake),[x1,y1]=pos(wake+span);
+  return `<svg class="arc" viewBox="0 0 ${W} ${H}" aria-hidden="true"><path d="M ${x0} ${y0} A ${r} ${r*.62} 0 0 1 ${x1} ${y1}" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 5" opacity=".6"/>${ticks}${sun}<text x="${x0}" y="${H-1}" font-size="10" font-family="JetBrains Mono,monospace" fill="currentColor" opacity=".7">${esc(S.profile.wake||"")}</text><text x="${x1}" y="${H-1}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace" fill="currentColor" opacity=".7">${esc(S.profile.sleep||"")}</text></svg>`;
+}
+
+const TIPS=[
+ ["Правило двух минут","Новую привычку начни с версии на 2 минуты. Важнее не пропускать, чем сделать много."],
+ ["Не пропускай дважды","Один пропуск это случайность, два подряд уже новая привычка. После пропуска сделай хотя бы минимум."],
+ ["Сначала опорные точки","Поставь в день то, что не двигается (сон, еда, учёба, намаз), и только потом остальное."],
+ ["Самое трудное утром","Сложную задачу ставь на время, когда у тебя больше энергии. Отметки энергии в «Итогах» покажут, когда это."],
+ ["Если — то","Привяжи привычку к событию: «Если я поужинал, то 10 минут читаю». Так её проще не забыть."],
+ ["Три главных дела","Если сделаешь только три дела из «Главного», день уже удался. Остальное бонус."],
+ ["25 минут фокуса","Помодоро: 25 минут работы без телефона, 5 минут отдыха. После четырёх кругов перерыв подлиннее."],
+ ["Свободное время видно","Пунктир «свободно 1 ч» в расписании можно нажать и сразу поставить туда блок."],
+ ["+1% каждый день","В итогах запиши одно маленькое улучшение на завтра. За год это даёт заметную разницу."],
+ ["Воскресное ревью","Раз в неделю посмотри «Последние 7 дней»: что получилось, что мешало и что поменять."],
+ ["Телефон вне комнаты","Положи телефон в другой комнате за час до сна, и отбой вовремя станет проще."],
+ ["Цели в действия","У каждой годовой цели должна быть привычка или блок на этой неделе, иначе это просто мечта."]];
+function tipCard(){const i=(tipIdx+Math.floor(Date.now()/864e5))%TIPS.length,t=TIPS[i];return `<section class="tip"><div class="spread"><span class="label">Совет · ${i+1}/${TIPS.length}</span><button class="ghost small" data-act="nexttip">Ещё</button></div><h3>${t[0]}</h3><p>${t[1]}</p></section>`}
+let tipIdx=0;
+/* ---------- TODAY ---------- */
+function renderToday(){
+  const k=dkey(cur),d=day(k),todayK=dkey(new Date()),isToday=k===todayK;
+  const anchors=anchorsFor(cur),buf=(S.profile.prayer&&S.profile.prayer.buffer)||0;
+  const items=anchors.map(a=>({...a,type:"anchor"})).concat(d.blocks.map(b=>({type:"block",b,m:toMin(b.s),end:toMin(b.e)})));
+  items.sort((a,b)=>a.m-b.m||(a.type==="anchor"?-1:1));
+  const prayers=anchors.filter(a=>a.kind==="prayer");
+  const clash=b=>{const s=toMin(b.s),e=toMin(b.e);
+    for(const p of prayers)if(p.m-buf<e&&p.m+10>s)return `Налезает на ${p.name} (${fromMin(p.m)}). Сдвинь блок.`;
+    for(const o of d.blocks)if(o!==b&&toMin(o.s)<e&&toMin(o.e)>s)return `Пересекается с «${o.t}».`;
+    return null};
+  const nowM=new Date().getHours()*60+new Date().getMinutes();
+  let html="",nowDone=!isToday,prevEnd=null;
+  const nowLine=()=>`<div class="now" aria-label="Сейчас"><span>${fromMin(nowM)}</span><i></i></div>`;
+  for(const it of items){
+    if(prevEnd!=null&&it.m-prevEnd>=30){html+=`<div class="gap"><span></span><button data-act="addblock" data-s="${fromMin(prevEnd)}" data-e="${fromMin(Math.min(it.m,prevEnd+60))}">свободно ${dur(it.m-prevEnd)}</button></div>`}
+    if(!nowDone&&it.m>nowM){html+=nowLine();nowDone=true}
+    if(it.type==="anchor"){
+      const sub=it.kind==="prayer"?(buf?`намаз · запас ${buf} мин`:"намаз"):it.kind==="info"?"конец времени фаджра":"опорная точка";
+      html+=`<div class="ti anchor"><div class="tm">${fromMin(it.m)}</div><div class="anc"><div><div class="nm">${esc(it.name)}</div><div class="sub">${sub}</div></div>${it.kind==="prayer"?`<input type="checkbox" aria-label="${esc(it.name)} вовремя" data-act="pray" data-id="${it.id}" ${d.prayed[it.id]?"checked":""}>`:""}</div></div>`;
+      prevEnd=Math.max(prevEnd??0,it.m);
+    }else{
+      const b=it.b,dir=dirOf(b.dir),cl=clash(b);
+      html+=`<div class="ti ${cl?"clash":""}" style="--c:${cv(dir.c)}"><div class="tm">${esc(b.s)}<small>до ${esc(b.e)}</small></div><div class="blk ${b.done?"done":""}">
+        <input type="checkbox" aria-label="Сделано: ${esc(b.t)}" data-act="bdone" data-id="${b.id}" ${b.done?"checked":""}>
+        <div class="t"><b>${esc(b.t)}</b><div class="meta"><span class="tag"><span class="dot" style="--c:${cv(dir.c)}"></span>${esc(dir.name)}</span><span>${dur(toMin(b.e)-toMin(b.s))}</span></div>${cl?`<div class="warnline">${esc(cl)}</div>`:""}</div>
+        <button class="icon-btn" aria-label="Изменить блок" data-act="editblock" data-id="${b.id}">•••</button></div></div>`;
+      prevEnd=Math.max(prevEnd??0,it.end);
+    }
+  }
+  if(!nowDone)html+=nowLine();
+  const prog=dayProgress(k);
+  const monday=addDays(cur,-((cur.getDay()+6)%7));
+  const week=[...Array(7)].map((_,i)=>{const dd=addDays(monday,i),kk=dkey(dd),x=S.days[kk];const has=x&&((x.blocks||[]).length||Object.values(x.habits||{}).some(Boolean));
+    return `<button data-act="pick" data-k="${kk}" class="${kk===k?"sel":""}" ${kk===todayK?'aria-current="date"':""}><small>${WD[dd.getDay()]}</small><span>${dd.getDate()}</span><i class="${has?"has":""}"></i></button>`}).join("");
+  const sk=skyAt(isToday?nowM:720);
+  const upcoming=items.filter(i=>i.m>nowM&&(i.type==="block"||i.kind!=="info"))[0];
+  const nextTxt=isToday&&upcoming?`Дальше: <b>${esc(upcoming.type==="block"?upcoming.b.t:upcoming.name)}</b> через ${dur(upcoming.m-nowM)}`:isToday?"На сегодня всё. Хорошего вечера.":`${d.blocks.length} блоков в плане`;
+  const hb=S.habits.filter(h=>d.habits[h.id]).length,bd=d.blocks.filter(b=>b.done).length;
+  return `<div class="today"><aside>
+    <section class="sky" style="--s1:${sk.s1};--s2:${sk.s2};--s3:${sk.s3};--ink:${sk.ink}">
+      <div class="spread"><span class="label">${WD[cur.getDay()]} · ${cur.getDate()} ${MON[cur.getMonth()]}</span>${S.example?"":syncPill()}</div>
+      <div class="greet">${isToday?greet():"План на день"}${S.profile.name?`, <em>${esc(S.profile.name)}</em>`:""}</div>
+      <div class="clock">${isToday?fromMin(nowM):cur.getDate()+"."+pad(cur.getMonth()+1)}</div>
+      <div class="next">${nextTxt}</div>
+      ${arcSvg(anchors,nowM,isToday)}
+      <div class="stats"><div><b>${Math.round(prog*100)}%</b><span>день</span></div><div><b>${hb}/${S.habits.length}</b><span>привычки</span></div><div><b>${prayers.length?prayers.filter(p=>d.prayed[p.id]).length+"/5":bd+"/"+d.blocks.length}</b><span>${prayers.length?"намаз":"блоки"}</span></div></div>
+    </section>
+    <nav class="week" aria-label="Дни недели">${week}</nav>
+    ${welcome()}${S.example?"":tipCard()}
+    <section class="card"><div class="spread" style="margin-bottom:4px"><span class="label">Главное на день</span>${isToday?"":`<button class="ghost small" data-act="today">К сегодня</button>`}</div>
+      ${[0,1,2].map(i=>`<div class="pri"><span class="n">${i+1}</span><input id="pri${i}" data-act="pri" data-i="${i}" placeholder="${["Самое важное","Второе","Третье"][i]}" value="${esc(d.priorities[i]||"")}" aria-label="Приоритет ${i+1}"></div>`).join("")}</section>
+  </aside>
+  <section><div class="sched-head"><h2>Рас<em>писание</em></h2><span class="label">${S.profile.prayer&&S.profile.prayer.on?esc(S.profile.prayer.city)+" · расчёт":items.length+" пунктов"}</span></div>
+    <div class="rail">${html}</div></section></div>`;
+}
+
+/* ---------- HABITS ---------- */
+function streak(h){let n=0,d=new Date();if(!(S.days[dkey(d)]&&S.days[dkey(d)].habits&&S.days[dkey(d)].habits[h.id]))d=addDays(d,-1);while(S.days[dkey(d)]&&S.days[dkey(d)].habits&&S.days[dkey(d)].habits[h.id]){n++;d=addDays(d,-1)}return n}
+function renderHabits(){
+  const t=new Date(),tk=dkey(t),yk=dkey(addDays(t,-1));
+  const rows=S.habits.map(h=>{const dir=dirOf(h.dir),on=!!day(tk).habits[h.id];
+    const missedY=!(S.days[yk]&&S.days[yk].habits&&S.days[yk].habits[h.id]);
+    const cells=[...Array(14)].map((_,i)=>{const k=dkey(addDays(t,i-13));const v=S.days[k]&&S.days[k].habits&&S.days[k].habits[h.id];return `<i class="${v?"on":""} ${k===tk?"today":""}"></i>`}).join("");
+    return `<div class="hab" style="--c:${cv(dir.c)}"><input type="checkbox" id="hab-${h.id}" data-act="hab" data-id="${h.id}" ${on?"checked":""}>
+      <label for="hab-${h.id}" style="min-width:0"><b style="font-weight:600">${esc(h.name)}</b> <span class="small muted">· ${esc(dir.name)}</span>
+      ${missedY&&!on?`<div class="hint">Вчера пропущено. Не пропускай дважды: хватит минимальной версии.</div>`:""}<div class="cells" aria-hidden="true">${cells}</div></label>
+      <div class="row" style="flex-wrap:nowrap;gap:2px"><div class="streak"><b>${streak(h)}</b><small>подряд</small></div><button class="icon-btn" aria-label="Удалить привычку" data-act="delhab" data-id="${h.id}">×</button></div></div>`}).join("");
+  const have=new Set(S.habits.map(h=>h.name));
+  const sugg=S.dirs.map(d=>{const p=PRESETS.find(x=>x[0]===d.name);return p&&!have.has(p[1])?{name:p[1],dir:d.id,c:d.c}:null}).filter(Boolean);
+  return `<header class="phead"><div><div class="label">каждый день</div><h1>Твои <em>привычки</em></h1></div></header>
+  <div class="stack-lg narrow">${welcome()}
+  <section class="card">${rows||`<p class="muted" style="margin:0">Пока нет привычек. Начни с одной маленькой, на 2–10 минут.</p>`}</section>
+  ${sugg.length?`<section class="stack"><h2>Идеи по твоим направлениям</h2><div class="chips">${sugg.map(s=>`<button class="chip" style="--c:${cv(s.c)}" data-act="addsugg" data-name="${esc(s.name)}" data-dir="${s.dir}"><span class="dot" style="--c:${cv(s.c)}"></span>${esc(s.name)}</button>`).join("")}</div></section>`:""}
+  <section class="card stack"><h2>Своя привычка</h2>
+    <input id="newhab" placeholder="Например: 10 минут растяжки">
+    <div class="grid2"><select id="newhabdir" aria-label="Направление">${S.dirs.map(d=>`<option value="${d.id}">${esc(d.name)}</option>`).join("")}</select><button class="primary" data-act="addhab">Добавить</button></div></section></div>`;
+}
+
+/* ---------- REVIEW ---------- */
+function renderReview(){
+  const k=dkey(cur),d=day(k),r=d.review||{};const en=r.energy||{},rd=r.dirs||{};
+  const scale=slot=>`<div class="scale" role="group" aria-label="Энергия">${[...Array(10)].map((_,i)=>`<button data-act="energy" data-slot="${slot}" data-v="${i+1}" aria-pressed="${en[slot]===i+1}">${i+1}</button>`).join("")}</div>`;
+  const dirs=S.dirs.map(dir=>{const v=(rd[dir.id]||{}).s;return `<div class="dirrow"><div class="row"><span class="dot" style="--c:${cv(dir.c)}"></span><b style="font-weight:600">${esc(dir.name)}</b></div>
+    <div class="seg">${[["yes","Да"],["part","Частично"],["no","Нет"]].map(([id,n])=>`<button data-act="rdir" data-dir="${dir.id}" data-v="${id}" aria-pressed="${v===id}">${n}</button>`).join("")}</div></div>`}).join("");
+  const prayers=anchorsFor(cur).filter(a=>a.kind==="prayer");
+  const bars=[...Array(7)].map((_,i)=>{const dd=addDays(cur,i-6),p=dayProgress(dkey(dd));return `<div><span class="b ${i===6?"cur":""}" style="height:${Math.max(3,Math.round(p*76))}px" title="${Math.round(p*100)}%"></span><small>${WD[dd.getDay()]}</small></div>`}).join("");
+  const ens=[...Array(7)].map((_,i)=>{const x=S.days[dkey(addDays(cur,i-6))],e=x&&x.review&&x.review.energy;if(!e)return null;const v=[e.m,e.d,e.e].filter(Boolean);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null}).filter(v=>v!=null);
+  return `<header class="phead"><div><div class="label">${WD[cur.getDay()]}, ${cur.getDate()} ${MON[cur.getMonth()]}</div><h1>Итоги <em>дня</em></h1></div>
+    <div class="row"><button data-act="day" data-n="-1" aria-label="Предыдущий день">‹</button><button data-act="day" data-n="1" aria-label="Следующий день">›</button></div></header>
+  <div class="stack-lg narrow">${welcome()}
+  <section class="grid3">
+    <div class="stat"><div class="label">Привычки</div><b>${S.habits.filter(h=>d.habits[h.id]).length}/${S.habits.length}</b></div>
+    <div class="stat"><div class="label">Блоки</div><b>${d.blocks.filter(b=>b.done).length}/${d.blocks.length}</b></div>
+    ${prayers.length?`<div class="stat"><div class="label">Намаз</div><b>${prayers.filter(p=>d.prayed[p.id]).length}/5</b></div>`:`<div class="stat"><div class="label">Сон</div><b>${r.sleep?esc(r.sleep)+" ч":"—"}</b></div>`}
+  </section>
+  <section class="card"><h2 style="margin-bottom:4px">Продвинулся по направлениям?</h2>${dirs}</section>
+  <section class="card stack"><h2>Энергия и сон</h2>
+    <div class="field"><span class="label">Утро</span>${scale("m")}</div><div class="field"><span class="label">День</span>${scale("d")}</div><div class="field"><span class="label">Вечер</span>${scale("e")}</div>
+    <div class="field"><label class="label" for="sleep">Сон, часов</label><input id="sleep" type="number" min="0" max="14" step="0.5" inputmode="decimal" data-act="sleep" value="${esc(r.sleep??"")}"></div></section>
+  <section class="card stack"><h2>Одно улучшение на завтра</h2><textarea id="kaizen" data-act="kaizen" placeholder="Маленький шаг на 1% лучше. Например: телефон в другую комнату в 22:00">${esc(r.kaizen||"")}</textarea></section>
+  <section class="card stack"><div class="spread"><h2>Последние 7 дней</h2><span class="small muted">${ens.length?"энергия в среднем "+(ens.reduce((a,b)=>a+b,0)/ens.length).toFixed(1):""}</span></div>
+    <div class="small muted">Доля сделанного: привычки и блоки</div><div class="bars">${bars}</div></section></div>`;
+}
+
+/* ---------- GOALS ---------- */
+function renderGoals(){
+  const cards=S.dirs.map(dir=>{const g=S.goals[dir.id]||(S.goals[dir.id]={y1:"",y5:"",y10:""});
+    return `<section class="card stack goalcard" style="--c:${cv(dir.c)}"><div class="row"><span class="dot" style="--c:${cv(dir.c)}"></span><h2>${esc(dir.name)}</h2></div>
+    ${[["y1","Через год"],["y5","Через 5 лет"],["y10","Через 10 лет"]].map(([id,n])=>`<div class="field"><label class="label" for="g-${dir.id}-${id}">${n}</label><textarea id="g-${dir.id}-${id}" data-act="goal" data-dir="${dir.id}" data-k="${id}" rows="2" placeholder="Чего хочешь достичь?">${esc(g[id])}</textarea></div>`).join("")}</section>`}).join("");
+  return `<header class="phead"><div><div class="label">${S.dirs.length} направлений · 1 / 5 / 10 лет</div><h1>Куда <em>идёшь</em></h1></div></header>
+  <div class="stack-lg">${welcome()}<div class="cols2 stack-lg">${cards}</div></div>`;
+}
+
+/* ---------- SETTINGS ---------- */
+function renderSettings(){
+  const p=S.profile,pr=p.prayer||prayerCfg("Бишкек",false),pt=pr.on?prayerTimes(new Date(),pr.lat,pr.lng,pr.tz,pr.method):null;
+  return `<header class="phead"><div><div class="label">профиль</div><h1>Настрой<em>ки</em></h1></div></header>
+  <div class="stack-lg narrow">${welcome()}
+  <section class="card stack"><div class="field"><label class="label" for="s-name">Имя</label><input id="s-name" data-act="sname" value="${esc(p.name)}"></div>
+    <div class="grid2"><div class="field"><label class="label" for="s-wake">Подъём</label><input id="s-wake" type="time" data-act="swake" value="${esc(p.wake)}"></div><div class="field"><label class="label" for="s-sleep">Отбой</label><input id="s-sleep" type="time" data-act="ssleep" value="${esc(p.sleep)}"></div></div></section>
+  <section class="card stack"><h2>Опорные точки дня</h2><p class="small muted" style="margin:0">То, что стоит в дне всегда: обед, начало учёбы, тренировка. Блоки планируются вокруг них.</p>
+    ${(p.anchors||[]).map(a=>`<div class="listrow"><input aria-label="Название" data-act="aname" data-id="${a.id}" value="${esc(a.name)}"><input type="time" aria-label="Время" data-act="atime" data-id="${a.id}" value="${esc(a.time)}"><button class="icon-btn" aria-label="Удалить" data-act="adel" data-id="${a.id}">×</button></div>`).join("")}
+    <button class="soft" data-act="aadd">Добавить точку</button></section>
+  <section class="card stack"><div class="spread"><div><h2>Время намаза</h2><div class="small muted">Пять намазов встают в день опорными точками</div></div><input type="checkbox" id="s-prayer" data-act="sprayer" ${pr.on?"checked":""} aria-label="Включить время намаза"></div>
+    ${pr.on?`<div class="grid2"><div class="field"><label class="label" for="s-city">Город</label><select id="s-city" data-act="scity">${Object.keys(CITIES).map(c=>`<option ${c===pr.city?"selected":""}>${c}</option>`).join("")}</select></div>
+      <div class="field"><label class="label" for="s-buf">Запас до намаза, мин</label><input id="s-buf" type="number" min="0" max="40" data-act="sbuf" value="${pr.buffer}"></div></div>
+      <div class="field"><label class="label" for="s-asr">Аср</label><select id="s-asr" data-act="sasr"><option value="2" ${pr.method.asr===2?"selected":""}>Ханафитский</option><option value="1" ${pr.method.asr===1?"selected":""}>Стандартный</option></select></div>
+      <div class="label">Поправка, мин</div><div class="grid3">${PRAYERS.map(([id,n])=>`<div class="field"><label class="small" for="adj-${id}">${n} <span class="mono muted">${fromMin(pt[id])}</span></label><input id="adj-${id}" type="number" step="1" data-act="adj" data-id="${id}" value="${pr.method.adj[id]||0}"></div>`).join("")}</div>
+      <p class="small muted" style="margin:0">Это астрономический расчёт. Сверь с муфтиятом своего города и при необходимости поправь на несколько минут.</p>`:""}</section>
+  <section class="card stack"><h2>Направления жизни</h2>
+    ${S.dirs.map(d=>`<div class="row" style="flex-wrap:nowrap"><button class="icon-btn" aria-label="Сменить цвет" data-act="dcolor" data-id="${d.id}"><span class="dot" style="--c:${cv(d.c)};width:16px;height:16px"></span></button><input aria-label="Название" data-act="dname" data-id="${d.id}" value="${esc(d.name)}"><button class="icon-btn" aria-label="Удалить направление" data-act="ddel" data-id="${d.id}">×</button></div>`).join("")}
+    <button class="soft" data-act="dadd" ${S.dirs.length>=8?"disabled":""}>Добавить направление</button></section>
+  <section class="card stack"><div class="spread"><h2>Где хранится план</h2>${syncPill()}</div>
+    ${!SB?`<p class="small muted" style="margin:0">План хранится только в этом браузере.</p>`:UID?`<p class="small muted" style="margin:0">Ты вошёл как <b>${esc(EMAIL)}</b>. План сохраняется в аккаунте и открывается на всех твоих устройствах. Другие люди его не видят.</p><button data-act="signout">Выйти</button>`:
+    `<p class="small muted" style="margin:0">Сейчас план только в этом браузере. Войди по почте, чтобы он был на телефоне и компьютере. Пароль не нужен: придёт ссылка для входа.</p>
+    <form id="loginform" class="grid2" style="grid-template-columns:1fr auto"><input id="login-email" type="email" required placeholder="you@example.com" autocomplete="email" aria-label="Почта"><button class="primary" type="submit">Получить ссылку</button></form>`}
+    <button data-act="onboard">Пройти настройку заново</button></section>
+  <section class="card stack"><h2>Что-то не работает?</h2><p class="small muted" style="margin:0">Напиши автору, разберёмся.</p>
+    <div class="row"><a class="chip" href="https://t.me/sn14kn" target="_blank" rel="noopener">Telegram @sn14kn</a><a class="chip" href="https://wa.me/996597189464" target="_blank" rel="noopener">WhatsApp +996 597 189 464</a></div></section></div>`;
+}
+
+/* ---------- onboarding ---------- */
+let OB=null;
+function onboard(){
+  OB={step:0,name:S.example?"":S.profile.name,wake:S.profile.wake||"07:00",sleep:S.profile.sleep||"23:00",dirs:S.example?[]:S.dirs.map(d=>d.name),custom:"",
+    anchors:S.example?[{id:uid(),name:"Обед",time:"13:00"}]:(S.profile.anchors||[]).map(a=>({...a})),prayer:!!(S.profile.prayer&&S.profile.prayer.on&&!S.example),city:(S.profile.prayer&&S.profile.prayer.city)||"Бишкек",habits:[]};
+  drawOB();
+}
+function drawOB(){
+  const st=OB.step,N=4;
+  const steps=`<div class="steps">${[...Array(N)].map((_,i)=>`<i class="${i<=st?"on":""}"></i>`).join("")}</div>`;
+  let body="",next="Дальше",can=true;
+  if(st===0){body=`<div class="stack"><div class="label">шаг 1 из 4</div><h1>Как тебя зовут?</h1><p class="lead">Life OS собирает твой день вокруг важного: целей, привычек и того, что всегда стоит в расписании.</p></div>
+      <div class="field"><label class="label" for="ob-name">Имя</label><input id="ob-name" data-ob="name" value="${esc(OB.name)}" placeholder="Имя"></div>
+      <div class="grid2"><div class="field"><label class="label" for="ob-wake">Обычно встаю</label><input id="ob-wake" type="time" data-ob="wake" value="${OB.wake}"></div><div class="field"><label class="label" for="ob-sleep">Ложусь</label><input id="ob-sleep" type="time" data-ob="sleep" value="${OB.sleep}"></div></div>`}
+  if(st===1){const all=[...new Set(PRESETS.map(p=>p[0]).concat(OB.dirs))];can=OB.dirs.length>0;
+    body=`<div class="stack"><div class="label">шаг 2 из 4</div><h1>Над чем работаешь в жизни?</h1><p class="lead">Выбери от 2 до 8 направлений. Названия потом можно поменять.</p></div>
+      <div class="chips">${all.map((n,i)=>{const on=OB.dirs.includes(n);return `<button class="chip" style="--c:${cv(on?OB.dirs.indexOf(n)%8:0)}" aria-pressed="${on}" data-act="obdir" data-name="${esc(n)}">${on?`<span class="dot" style="--c:${cv(OB.dirs.indexOf(n)%8)}"></span>`:""}${esc(n)}</button>`}).join("")}</div>
+      <div class="grid2" style="grid-template-columns:1fr auto"><input id="ob-custom" placeholder="Своё направление" value="${esc(OB.custom)}" data-ob="custom"><button data-act="obcustom">Добавить</button></div>
+      <p class="small muted">Выбрано: ${OB.dirs.length} из 8</p>`}
+  if(st===2){body=`<div class="stack"><div class="label">шаг 3 из 4</div><h1>Что стоит в дне всегда?</h1><p class="lead">Опорные точки: всё остальное планируется вокруг них, и Life OS предупредит, если блок на них налезает.</p></div>
+      <div class="stack">${OB.anchors.map(a=>`<div class="listrow"><input aria-label="Название" data-oba="name" data-id="${a.id}" value="${esc(a.name)}"><input type="time" aria-label="Время" data-oba="time" data-id="${a.id}" value="${a.time}"><button class="icon-btn" aria-label="Удалить" data-act="obadel" data-id="${a.id}">×</button></div>`).join("")}
+      <div class="chips">${ANCHOR_IDEAS.filter(x=>!OB.anchors.some(a=>a.name===x[0])).map(x=>`<button class="chip" data-act="obaadd" data-name="${x[0]}" data-time="${x[1]}">+ ${x[0]}</button>`).join("")}<button class="chip" data-act="obaadd" data-name="" data-time="12:00">+ Своя</button></div></div>
+      <div class="card stack"><label class="spread" for="ob-prayer"><span><b style="font-weight:600">Время намаза</b><br><span class="small muted">Пять намазов по твоему городу встанут опорными точками</span></span><input type="checkbox" id="ob-prayer" data-ob="prayer" ${OB.prayer?"checked":""}></label>
+      ${OB.prayer?`<select id="ob-city" data-ob="city" aria-label="Город">${Object.keys(CITIES).map(c=>`<option ${c===OB.city?"selected":""}>${c}</option>`).join("")}</select>`:""}</div>`}
+  if(st===3){next="Начать";const sugg=OB.dirs.map((n,i)=>{const p=PRESETS.find(x=>x[0]===n);return p?{name:p[1],c:i%8}:null}).filter(Boolean);
+    body=`<div class="stack"><div class="label">шаг 4 из 4</div><h1>Пара маленьких привычек?</h1><p class="lead">Лучше начать с одной-двух на несколько минут. Можно пропустить и добавить позже.</p></div>
+      <div class="chips">${sugg.map(s=>{const on=OB.habits.includes(s.name);return `<button class="chip" style="--c:${cv(s.c)}" aria-pressed="${on}" data-act="obhab" data-name="${esc(s.name)}"><span class="dot" style="--c:${cv(s.c)}"></span>${esc(s.name)}</button>`}).join("")||`<p class="muted">Для твоих направлений нет готовых идей. Добавишь свои во вкладке «Привычки».</p>`}</div>`}
+  layer.innerHTML=`<div class="full" role="dialog" aria-modal="true" aria-label="Настройка Life OS"><div class="in">${steps}${body}
+    <div style="margin-top:auto" class="stack"><button class="primary block" data-act="obnext" ${can?"":"disabled"}>${next}</button>
+    <div class="spread">${st?`<button class="ghost" data-act="obback">Назад</button>`:`<span></span>`}<button class="ghost" data-act="obclose">${S.example?"Посмотреть пример":"Отмена"}</button></div></div></div></div>`;
+}
+function finishOB(){
+  const dirs=OB.dirs.map((n,i)=>{const old=!S.example&&S.dirs.find(d=>d.name===n);return old?{...old,c:old.c??i%8}:{id:uid(),name:n,c:i%8}});
+  const keepIds=new Set(dirs.map(d=>d.id));
+  const habits=(S.example?[]:S.habits.filter(h=>keepIds.has(h.dir))).concat(OB.habits.map(n=>{const di=OB.dirs.findIndex(dn=>{const p=PRESETS.find(x=>x[0]===dn);return p&&p[1]===n});return {id:uid(),name:n,dir:dirs[Math.max(0,di)].id}}));
+  const goals={};dirs.forEach(d=>goals[d.id]=(!S.example&&S.goals[d.id])||{y1:"",y5:"",y10:""});
+  const prayer={...((!S.example&&S.profile.prayer&&S.profile.prayer.city===OB.city)?S.profile.prayer:prayerCfg(OB.city,OB.prayer)),on:OB.prayer};
+  S={example:false,v:2,profile:{name:OB.name.trim(),wake:OB.wake,sleep:OB.sleep,anchors:OB.anchors.filter(a=>a.name.trim()),prayer},dirs,habits,goals,days:S.example?{}:S.days};
+  OB=null;layer.innerHTML="";lastSent={};save();tab="today";cur=new Date();render();toast("Готово. Добавь первый блок дня");
+}
+
+/* ---------- block sheet ---------- */
+function sheet(html){layer.innerHTML=`<div class="sheet-bg" data-act="close"><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div></div>`;const f=layer.querySelector("input");if(f)f.focus()}
+function blockSheet(b,pre){
+  const isNew=!b;b=b||{s:pre&&pre.s||"",e:pre&&pre.e||"",t:"",dir:S.dirs[0]&&S.dirs[0].id};
+  sheet(`<form class="stack" id="bform"><h2>${isNew?"Новый блок":"Изменить блок"}</h2>
+    <input id="b-t" required value="${esc(b.t)}" placeholder="Что делаешь?" aria-label="Что делаешь">
+    <div class="grid2"><div class="field"><label class="label" for="b-s">Начало</label><input id="b-s" type="time" required value="${esc(b.s)}"></div><div class="field"><label class="label" for="b-e">Конец</label><input id="b-e" type="time" required value="${esc(b.e)}"></div></div>
+    <div class="chips" aria-label="Длительность">${[25,50,90].map(m=>`<button type="button" class="chip" data-act="bdur" data-m="${m}">${m} мин</button>`).join("")}</div>
+    <div class="field"><span class="label">Направление</span><div class="chips" id="b-dirs">${S.dirs.map(d=>`<button type="button" class="chip" style="--c:${cv(d.c)}" aria-pressed="${d.id===b.dir}" data-act="bdir" data-id="${d.id}"><span class="dot" style="--c:${cv(d.c)}"></span>${esc(d.name)}</button>`).join("")}</div></div>
+    <button class="primary block" type="submit">${isNew?"Добавить в день":"Сохранить"}</button>
+    <div class="spread">${isNew?"<span></span>":`<button type="button" class="ghost" style="color:var(--warn)" data-act="delblock" data-id="${b.id}">Удалить</button>`}<button type="button" class="ghost" data-act="close">Отмена</button></div></form>`);
+  let dir=b.dir;
+  layer.querySelector("#bform").addEventListener("click",e=>{const x=e.target.closest("[data-act]");if(!x)return;
+    if(x.dataset.act==="bdir"){dir=x.dataset.id;layer.querySelectorAll("#b-dirs .chip").forEach(c=>c.setAttribute("aria-pressed",c.dataset.id===dir))}
+    if(x.dataset.act==="bdur"){const s=layer.querySelector("#b-s");if(!s.value)s.value=fromMin(new Date().getHours()*60+new Date().getMinutes());layer.querySelector("#b-e").value=fromMin(toMin(s.value)+(+x.dataset.m))}});
+  layer.querySelector("#bform").addEventListener("submit",ev=>{ev.preventDefault();
+    const v={t:layer.querySelector("#b-t").value.trim(),s:layer.querySelector("#b-s").value,e:layer.querySelector("#b-e").value,dir};
+    if(!v.t){toast("Напиши, что за блок");return}if(toMin(v.e)<=toMin(v.s)){toast("Конец должен быть позже начала");return}
+    const d=day();if(isNew)d.blocks.push({id:uid(),...v});else Object.assign(d.blocks.find(x=>x.id===b.id),v);
+    save();layer.innerHTML="";render();toast(isNew?"Блок добавлен":"Сохранено")});
+}
+
+/* ---------- render & events ---------- */
+const ICONS={
+ today:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+ habits:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="4"/><path d="M8 2v4M16 2v4M8 13l3 3 5-6"/></svg>',
+ add:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+ review:'<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+ goals:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>',
+ settings:'<svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>'
+};
+const TABS=[["today","Сегодня"],["habits","Привычки"],["add",""],["review","Итоги"],["goals","Цели"]];
+function render(){
+  const y=window.scrollY;
+  const top=`<div class="topbar"><div class="brand">Life<em>OS</em></div><nav class="toptabs" aria-label="Разделы">${TABS.filter(t=>t[0]!=="add").map(([id,n])=>`<button data-tab="${id}" ${id===tab?'aria-current="page"':""}>${n}</button>`).join("")}</nav>
+    <div class="topact"><button class="hot addtop" data-tab="add">+ Блок</button><button class="icon-round" data-act="${tab==="settings"?"back":"opensettings"}" aria-label="${tab==="settings"?"Закрыть настройки":"Настройки"}">${tab==="settings"?'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>':ICONS.settings}</button></div></div>`;
+  app.innerHTML=top+({today:renderToday,habits:renderHabits,review:renderReview,goals:renderGoals,settings:renderSettings})[tab]();
+  document.getElementById("tabs").innerHTML=TABS.map(([id,n])=>id==="add"?`<button class="fab" data-tab="add" aria-label="Добавить блок"><span>${ICONS.add}</span></button>`:`<button data-tab="${id}" ${id===tab?'aria-current="page"':""}>${ICONS[id]}${n}</button>`).join("");
+  window.scrollTo(0,y);
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(!b)return;
+  if(b.dataset.tab==="add"){if(tab!=="today"){tab="today";render()}blockSheet();return}
+  tab=b.dataset.tab;if(tab!=="review")cur=new Date();render();window.scrollTo(0,0)});
+const rev=()=>{const d=day();d.review=d.review||{};d.review.energy=d.review.energy||{};d.review.dirs=d.review.dirs||{};return d.review};
+const dirUsed=id=>S.habits.some(h=>h.dir===id)||Object.values(S.days).some(x=>(x.blocks||[]).some(b=>b.dir===id));
+document.addEventListener("click",e=>{
+  const el=e.target.closest("[data-act]");if(!el)return;const a=el.dataset.act;
+  if(a==="close"){if(e.target===el||el.tagName==="BUTTON")layer.innerHTML="";return}
+  if(["pray","bdone","hab","sprayer","bdir","bdur"].includes(a))return;
+  if(a==="day"){cur=addDays(cur,+el.dataset.n);render()}
+  else if(a==="today"){cur=new Date();render()}
+  else if(a==="pick"){const[y,m,dd]=el.dataset.k.split("-").map(Number);cur=new Date(y,m-1,dd);render()}
+  else if(a==="opensettings"){tab="settings";render();window.scrollTo(0,0)}
+  else if(a==="back"){tab="today";render()}
+  else if(a==="addblock")blockSheet(null,{s:el.dataset.s,e:el.dataset.e});
+  else if(a==="editblock")blockSheet(day().blocks.find(b=>b.id===el.dataset.id));
+  else if(a==="delblock"){const d=day();d.blocks=d.blocks.filter(b=>b.id!==el.dataset.id);save();layer.innerHTML="";render();toast("Блок удалён")}
+  else if(a==="addhab"){const n=document.getElementById("newhab").value.trim();if(!n){toast("Напиши название привычки");return}S.habits.push({id:uid(),name:n,dir:document.getElementById("newhabdir").value});save();render();toast("Привычка добавлена")}
+  else if(a==="addsugg"){S.habits.push({id:uid(),name:el.dataset.name,dir:el.dataset.dir});save();render();toast("Привычка добавлена")}
+  else if(a==="delhab"){S.habits=S.habits.filter(h=>h.id!==el.dataset.id);save();render();toast("Привычка удалена")}
+  else if(a==="energy"){rev().energy[el.dataset.slot]=+el.dataset.v;save();render()}
+  else if(a==="rdir"){rev().dirs[el.dataset.dir]={s:el.dataset.v};save();render()}
+  else if(a==="aadd"){S.profile.anchors=S.profile.anchors||[];S.profile.anchors.push({id:uid(),name:"Новая точка",time:"12:00"});save();render()}
+  else if(a==="adel"){S.profile.anchors=S.profile.anchors.filter(x=>x.id!==el.dataset.id);save();render()}
+  else if(a==="dcolor"){const d=S.dirs.find(x=>x.id===el.dataset.id);d.c=((d.c??0)+1)%8;save();render()}
+  else if(a==="ddel"){if(S.dirs.length<=1){toast("Нужно хотя бы одно направление");return}const id=el.dataset.id;
+    if(dirUsed(id)&&el.dataset.confirm!=="1"){el.dataset.confirm="1";el.textContent="Точно?";el.style.color="var(--warn)";toast("Блоки и привычки этого направления останутся без направления. Нажми ещё раз");return}
+    S.dirs=S.dirs.filter(d=>d.id!==id);save();render();toast("Направление удалено")}
+  else if(a==="dadd"){if(S.dirs.length>=8)return;const used=new Set(S.dirs.map(d=>d.c));let c=0;while(used.has(c)&&c<7)c++;S.dirs.push({id:uid(),name:"Новое направление",c});S.goals[S.dirs.at(-1).id]={y1:"",y5:"",y10:""};save();render()}
+  else if(a==="onboard")onboard();
+  else if(a==="nexttip"){tipIdx++;render()}
+  else if(a==="signout")signOut();
+  /* onboarding */
+  else if(a==="obnext"){if(OB.step<3){OB.step++;drawOB()}else finishOB()}
+  else if(a==="obback"){OB.step--;drawOB()}
+  else if(a==="obclose"){OB=null;layer.innerHTML=""}
+  else if(a==="obdir"){const n=el.dataset.name,i=OB.dirs.indexOf(n);if(i>=0)OB.dirs.splice(i,1);else if(OB.dirs.length<8)OB.dirs.push(n);else toast("Не больше 8 направлений");drawOB()}
+  else if(a==="obcustom"){const n=OB.custom.trim();if(n&&!OB.dirs.includes(n)&&OB.dirs.length<8)OB.dirs.push(n);OB.custom="";drawOB()}
+  else if(a==="obaadd"){OB.anchors.push({id:uid(),name:el.dataset.name,time:el.dataset.time});drawOB()}
+  else if(a==="obadel"){OB.anchors=OB.anchors.filter(x=>x.id!==el.dataset.id);drawOB()}
+  else if(a==="obhab"){const n=el.dataset.name,i=OB.habits.indexOf(n);if(i>=0)OB.habits.splice(i,1);else OB.habits.push(n);drawOB()}
+});
+document.addEventListener("change",e=>{
+  const el=e.target,a=el.dataset&&el.dataset.act;
+  if(el.dataset&&el.dataset.ob==="prayer"){OB.prayer=el.checked;drawOB();return}
+  if(el.dataset&&el.dataset.ob==="city"){OB.city=el.value;return}
+  if(!a)return;const pr=S.profile.prayer;
+  if(a==="pray"){day().prayed[el.dataset.id]=el.checked;save();render()}
+  else if(a==="bdone"){const b=day().blocks.find(x=>x.id===el.dataset.id);b.done=el.checked;save();render()}
+  else if(a==="hab"){day(dkey(new Date())).habits[el.dataset.id]=el.checked;save();render()}
+  else if(a==="sprayer"){S.profile.prayer={...(pr||prayerCfg("Бишкек",false)),on:el.checked};save();render()}
+  else if(a==="scity"){S.profile.prayer={...prayerCfg(el.value,true),buffer:pr.buffer};save();render()}
+  else if(a==="sbuf"){pr.buffer=Math.max(0,+el.value||0);save()}
+  else if(a==="sasr"){pr.method.asr=+el.value;save();render()}
+  else if(a==="adj"){pr.method.adj[el.dataset.id]=+el.value||0;save();render()}
+  else if(a==="swake"){S.profile.wake=el.value;save()}
+  else if(a==="ssleep"){S.profile.sleep=el.value;save()}
+  else if(a==="atime"){S.profile.anchors.find(x=>x.id===el.dataset.id).time=el.value;save()}
+});
+document.addEventListener("input",e=>{
+  const el=e.target,ds=el.dataset||{};
+  if(ds.ob&&OB&&ds.ob!=="prayer"&&ds.ob!=="city"){OB[ds.ob]=el.value;return}
+  if(ds.oba&&OB){const x=OB.anchors.find(a=>a.id===ds.id);if(x)x[ds.oba]=el.value;return}
+  const a=ds.act;if(!a)return;
+  if(a==="pri"){day().priorities[+ds.i]=el.value;save()}
+  else if(a==="sleep"){rev().sleep=el.value;save()}
+  else if(a==="kaizen"){rev().kaizen=el.value;save()}
+  else if(a==="goal"){S.goals[ds.dir][ds.k]=el.value;save()}
+  else if(a==="sname"){S.profile.name=el.value;save()}
+  else if(a==="aname"){S.profile.anchors.find(x=>x.id===ds.id).name=el.value;save()}
+  else if(a==="dname"){S.dirs.find(x=>x.id===ds.id).name=el.value;save()}
+});
+document.addEventListener("submit",async e=>{if(e.target.id!=="loginform")return;e.preventDefault();const em=document.getElementById("login-email").value.trim();const err=await signIn(em);toast(err?"Не получилось отправить: "+err.message:"Ссылка для входа отправлена на "+em)});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!layer.querySelector(".full"))layer.innerHTML="";if(e.key==="Enter"&&e.target.id==="ob-custom"){e.preventDefault();document.querySelector('[data-act="obcustom"]').click()}});
+render();
+if(S.example){let seen=false;try{seen=localStorage.getItem(KEY+".seen")==="1";localStorage.setItem(KEY+".seen","1")}catch(e){seen=true}if(!seen)onboard()}
+connect();
+})();
+</script>
+<script>if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));</script>
+</body>
+</html>
