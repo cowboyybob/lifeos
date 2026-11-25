@@ -3,5 +3,5 @@
 // Never put the service_role key here.
 window.LIFEOS_CONFIG = {
   supabaseUrl: "https://iyfebplyhidhpfhqrwvo.supabase.co",
-  supabaseAnonKey: ""
+  supabaseAnonKey: "sb_publishable_JBkVfQz8JaZQQqD207R7Aw_VyVoE5a4"
 };
