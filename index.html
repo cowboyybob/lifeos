@@ -793,6 +793,7 @@ function renderSettings(){
     `<p class="small muted" style="margin:0">Сейчас план только в этом браузере. Войди по почте, чтобы он был на телефоне и компьютере. Пароль не нужен: придёт ссылка для входа.</p>
     <form id="loginform" class="grid2" style="grid-template-columns:1fr auto"><input id="login-email" type="email" required placeholder="you@example.com" autocomplete="email" aria-label="Почта"><button class="primary" type="submit">Получить ссылку</button></form>`}
     <button data-act="onboard">Пройти настройку заново</button></section>
+  <section class="card stack"><div class="spread"><div><h2>Telegram-бот</h2><div class="small muted" id="tgstat">${!CFG.telegramBot?"Скоро: план дня утром, напоминания о блоках и парах, добавление блоков из чата.":!UID?"Войди по почте выше, и бот сможет присылать план и напоминания.":"План утром, напоминания за 5–10 минут, /add прямо из чата."}</div></div>${CFG.telegramBot&&UID?`<button class="soft" data-act="tglink">Подключить</button>`:""}</div></section>
   <section class="card stack"><h2>Что-то не работает?</h2><p class="small muted" style="margin:0">Напиши автору, разберёмся.</p>
     <div class="row"><a class="chip" href="https://t.me/sn14kn" target="_blank" rel="noopener">Telegram @sn14kn</a><a class="chip" href="https://wa.me/996597189464" target="_blank" rel="noopener">WhatsApp +996 597 189 464</a></div></section></div>`;
 }
@@ -902,6 +903,11 @@ document.addEventListener("click",e=>{
   else if(a==="focusstop"){if(F&&!F.done){const used=Math.round((F.dur-fLeft())/60);if(used>=1){const d=day(F.date);d.focus=(d.focus||0)+used;save()}}F=null;fSave();focusHide();render()}
   else if(a==="focusdoneblock"){const d=day(F.date),b=d.blocks.find(x=>x.id===F.blockId);if(b)b.done=true;save();F=null;fSave();focusHide();render();toast("Блок отмечен")}
   else if(a==="autoplan"){autoPlan()}
+  else if(a==="tglink"){(async()=>{if(!SB||!UID)return;const code=Array.from(crypto.getRandomValues(new Uint8Array(9)),b=>"abcdefghijkmnpqrstuvwxyz23456789"[b%32]).join("");
+    const w=window.open("about:blank","_blank");
+    const {error}=await SB.from("lifeos_docs").upsert({user_id:UID,id:"tglink",body:{code,exp:Date.now()+15*60000,tz:-new Date().getTimezoneOffset()},updated_at:new Date().toISOString()});
+    if(error){if(w)w.close();toast("Не получилось, попробуй ещё раз");return}
+    const url="https://t.me/"+CFG.telegramBot+"?start="+code;if(w)w.location=url;else location.href=url;toast("Нажми «Start» в Telegram")})()}
   else if(a==="calsheet"){calSheet()}
   else if(a==="icsdl"){const n=+el.dataset.n,r=icsFor([...Array(n)].map((_,i)=>addDays(cur,i)));if(!r.n){toast("В эти дни нет блоков");return}
     const url=URL.createObjectURL(new Blob([r.text],{type:"text/calendar"})),x=document.createElement("a");x.href=url;x.download="lifeos-"+dkey(cur)+".ics";document.body.appendChild(x);x.click();x.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);toast("Событий в файле: "+r.n)}
