@@ -91,7 +91,8 @@ a{color:inherit}
 .narrow{max-width:760px}
 
 /* bento today */
-.bento{display:grid;grid-template-columns:1fr 1fr;gap:12px;grid-template-areas:"hello hello" "hero hero" "ring streak" "week week" "tip tip" "pri pri" "sched sched"}
+.bento{display:grid;grid-template-columns:1fr 1fr;gap:12px;grid-template-areas:"hello hello" "hero hero" "ring streak" "focus focus" "week week" "tip tip" "pri pri" "sched sched"}
+.a-focus{grid-area:focus}
 .a-hello{grid-area:hello;padding:4px 4px 2px}
 .a-hello h1 span{color:var(--accent)}
 .a-hero{grid-area:hero;background:var(--hero);color:var(--heroInk);border:none;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden}
@@ -158,6 +159,42 @@ a{color:inherit}
 .anc input{margin-left:auto}
 .icon-btn{background:transparent;color:var(--sub);padding:4px 8px;font-size:1rem;line-height:1;border-radius:10px}
 .gap{display:grid;grid-template-columns:48px 1fr;gap:10px}
+.a-focus{background:var(--t2);color:var(--t2i)}
+.a-focus .fnum{font-family:var(--mono);font-size:2.1rem;font-weight:700;letter-spacing:-.03em;line-height:1}
+.a-focus .chips button{background:color-mix(in srgb,var(--t2i) 10%,transparent);color:inherit}
+.sched-tools{display:flex;gap:6px;flex-wrap:wrap}
+.sched-tools button{padding:6px 10px;font-size:.76rem}
+#focus{position:fixed;inset:0;z-index:30;background:var(--hero);color:var(--heroInk);display:none;place-items:center;padding:24px}
+#focus.on{display:grid}
+#focus .fin{max-width:420px;width:100%;text-align:center;display:flex;flex-direction:column;gap:18px;align-items:center}
+#focus .fring{width:min(78vw,300px);aspect-ratio:1}
+#focus .fring circle{fill:none;stroke-width:6}
+#focus .fring .bgc{stroke:color-mix(in srgb,var(--heroInk) 16%,transparent)}
+#focus .fring .fgc{stroke:var(--t1);stroke-linecap:round;transition:stroke-dashoffset 1s linear}
+#focus .ftime{font-family:var(--mono);font-size:44px;font-weight:700;letter-spacing:-.04em;fill:currentColor}
+#focus .row button{background:color-mix(in srgb,var(--heroInk) 14%,transparent);color:var(--heroInk)}
+#focus .row button.go{background:var(--t1);color:var(--t1i)}
+.ydots{display:grid;grid-template-columns:repeat(auto-fill,minmax(9px,1fr));gap:3px}
+.ydots i{aspect-ratio:1;border-radius:3px;background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.ydots i.p{background:color-mix(in srgb,var(--accent) calc(var(--v)*100%),color-mix(in srgb,var(--ink) 14%,transparent))}
+.ydots i.t{outline:2px solid var(--accent);outline-offset:1px}
+.ydots i.f{opacity:.45}
+.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mgrid .mc{aspect-ratio:1;border-radius:18px;background:var(--tileBg);border:1px solid var(--tileBorder);position:relative;display:flex}
+.mgrid .mc textarea{border:0;background:transparent;resize:none;text-align:center;font-weight:700;font-size:.86rem;padding:10px 8px;height:100%;width:100%;border-radius:18px;line-height:1.25}
+.mgrid .mc.ctr{background:var(--hero);color:var(--heroInk)}
+.mgrid .mc.ctr textarea{color:var(--heroInk);font-size:1rem}
+.mgrid .mc.th{background:var(--t1);color:var(--t1i)}
+.mgrid .mc.th textarea{color:var(--t1i)}
+.mgrid .mc .zoom{position:absolute;right:6px;bottom:6px;padding:2px 7px;font-size:.7rem;border-radius:9px;background:color-mix(in srgb,currentColor 14%,transparent);color:inherit}
+.mbig{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;min-width:640px}
+.mbig .blk3{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px;border-radius:14px;background:color-mix(in srgb,var(--ink) 4%,transparent)}
+.mbig .blk3 button{aspect-ratio:1;font-size:.62rem;font-weight:700;padding:3px;border-radius:9px;background:var(--tileBg);color:var(--ink);overflow:hidden;line-height:1.15;overflow-wrap:anywhere}
+.mbig .blk3 button.th{background:var(--t1);color:var(--t1i)}
+.mbig .blk3 button.ctr{background:var(--hero);color:var(--heroInk)}
+.prop{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center;padding:10px;border-radius:16px;background:color-mix(in srgb,var(--ink) 5%,transparent)}
+.prop .times{grid-column:2;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tpl{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:16px;background:color-mix(in srgb,var(--ink) 5%,transparent)}
 .ti.cls .blk{background:color-mix(in srgb,var(--hero) 12%,transparent)}
 .ti.cls .blk::before{background:var(--hero)}
 .ttwrap{overflow-x:auto;margin:0 -4px;padding:0 4px}
@@ -231,7 +268,7 @@ a{color:inherit}
 
 /* bottom tabs */
 nav.tabs{position:fixed;left:0;right:0;bottom:0;padding:0 max(12px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));z-index:5;pointer-events:none}
-nav.tabs .in{pointer-events:auto;max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);align-items:center;background:var(--hero);color:var(--heroInk);border-radius:24px;padding:6px;box-shadow:0 10px 30px -10px rgba(0,0,0,.35)}
+nav.tabs .in{pointer-events:auto;max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);align-items:center;background:var(--hero);color:var(--heroInk);border-radius:24px;padding:6px;box-shadow:0 10px 30px -10px rgba(0,0,0,.35)}
 :root.glass nav.tabs .in{background:color-mix(in srgb,var(--hero) 82%,transparent);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 nav.tabs button{background:none;border-radius:18px;padding:8px 2px;font-size:.64rem;font-weight:700;color:color-mix(in srgb,var(--heroInk) 62%,transparent);display:flex;flex-direction:column;align-items:center;gap:3px}
 nav.tabs svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -262,7 +299,7 @@ nav.tabs button.fab span{width:46px;height:46px;border-radius:16px;background:va
   .toptabs{display:flex}
   .topact .addtop{display:inline-flex}
   nav.tabs{display:none}
-  .bento{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-areas:"hello hello sched sched" "hero hero sched sched" "ring streak sched sched" "week week sched sched" "tip tip sched sched" "pri pri sched sched";align-items:start}
+  .bento{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-areas:"hello hello sched sched" "hero hero sched sched" "ring streak sched sched" "focus focus sched sched" "week week sched sched" "tip tip sched sched" "pri pri sched sched";align-items:start}
   .a-sched{align-self:stretch}
   .toast{bottom:28px}
   .sheet-bg{align-items:center}
@@ -362,7 +399,7 @@ let DB=null,UID=null,EMAIL="",sync="local",lastSent={},flushT=null,writing=false
 const CFG=window.LIFEOS_CONFIG||{};
 const SB=(CFG.supabaseUrl&&CFG.supabaseAnonKey&&window.supabase)?window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseAnonKey):null;
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(UID&&!S.example){clearTimeout(flushT);flushT=setTimeout(flush,700)}}
-function docsOf(st){const o={state:{v:2,profile:st.profile,dirs:st.dirs,habits:st.habits,goals:st.goals,ui:st.ui||{}}};for(const k in st.days)o["day-"+k]={date:k,...st.days[k]};return o}
+function docsOf(st){const o={state:{v:2,profile:st.profile,dirs:st.dirs,habits:st.habits,goals:st.goals,ui:st.ui||{},mandala:st.mandala||null,templates:st.templates||[]}};for(const k in st.days)o["day-"+k]={date:k,...st.days[k]};return o}
 async function flush(){
   if(writing){flushT=setTimeout(flush,700);return}writing=true;
   try{const docs=docsOf(S),rows=[];for(const id in docs){const j=JSON.stringify(docs[id]);if(lastSent[id]!==j)rows.push({user_id:UID,id,body:docs[id],updated_at:new Date().toISOString()})}
@@ -512,7 +549,7 @@ function renderToday(){
       html+=`<div class="ti ${cl?"clash":""}" style="--c:${cv(dir.c)}"><div class="tm">${esc(b.s)}<small>${esc(b.e)}</small></div><div class="blk ${b.done?"done":""}">
         <input type="checkbox" aria-label="Сделано: ${esc(b.t)}" data-act="bdone" data-id="${b.id}" ${b.done?"checked":""}>
         <div class="t"><b>${esc(b.t)}</b><div class="meta"><span class="tag">${esc(dir.name)}</span><span>· ${dur(toMin(b.e)-toMin(b.s))}</span></div>${cl?`<div class="warnline">${esc(cl)}</div>`:""}</div>
-        <button class="icon-btn" aria-label="Изменить блок" data-act="editblock" data-id="${b.id}">•••</button></div></div>`;
+        <button class="icon-btn" aria-label="Фокус на блоке" data-act="focusblock" data-id="${b.id}">▶</button><button class="icon-btn" aria-label="Изменить блок" data-act="editblock" data-id="${b.id}">•••</button></div></div>`;
       prevEnd=Math.max(prevEnd??0,it.end);
     }
   }
@@ -534,11 +571,12 @@ function renderToday(){
   <section class="tile a-ring"><span class="label">сделано</span><svg class="ring" viewBox="0 0 70 70"><circle class="bgc" cx="35" cy="35" r="30"/><circle class="fgc" cx="35" cy="35" r="30" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-prog)}" transform="rotate(-90 35 35)"/><text x="35" y="40" text-anchor="middle">${Math.round(prog*100)}%</text></svg>
     <div class="small" style="font-weight:700;opacity:.75">${prayers.length?`намаз ${prayers.filter(p=>d.prayed[p.id]).length}/5`:`блоки ${d.blocks.filter(b=>b.done).length}/${d.blocks.length}`}</div></section>
   <section class="tile a-streak"><span class="label">${best?"серия: "+esc(best.h.name):"привычки"}</span><div class="big">${best?best.n+" "+plural(best.n,"день","дня","дней"):"0"}</div>${best?`<div class="dots7">${dots}</div>`:`<button class="ghost small" style="color:inherit;padding:6px 0" data-tab="habits">Добавить →</button>`}</section>
+  ${focusTile(d)}
   <section class="tile a-week"><nav class="week" aria-label="Дни недели">${week}</nav></section>
   ${S.example?`<div style="grid-area:tip">${welcome()}</div>`:tipCard()}
   <section class="tile a-pri"><div class="spread" style="margin-bottom:2px"><span class="label">Главное на день</span><span class="small muted">до трёх</span></div>
     ${[0,1,2].map(i=>`<div class="pri"><span class="n">${i+1}</span><input id="pri${i}" data-act="pri" data-i="${i}" placeholder="${["Самое важное","Второе","Третье"][i]}" value="${esc(d.priorities[i]||"")}" aria-label="Приоритет ${i+1}"></div>`).join("")}</section>
-  <section class="tile a-sched"><div class="sched-head"><h2>Расписание</h2><span class="small muted">${S.profile.prayer&&S.profile.prayer.on?esc(S.profile.prayer.city)+" · расчёт":""}</span></div><div class="rail">${html}</div>
+  <section class="tile a-sched"><div class="sched-head"><h2>Расписание</h2><div class="sched-tools"><button class="soft" data-act="autoplan">✦ Автоплан</button><button class="soft" data-act="templates">Шаблоны</button><button class="soft" data-act="calsheet">В календарь</button></div></div><div class="rail">${html}</div>
     <button class="block soft" style="margin-top:10px" data-act="addblock">+ Добавить блок</button></section>
   </div>`;
 }
@@ -575,6 +613,7 @@ function renderReview(){
   const prayers=anchorsFor(cur).filter(a=>a.kind==="prayer");
   const bars=[...Array(7)].map((_,i)=>{const dd=addDays(cur,i-6),p=dayProgress(dkey(dd));return `<div><span class="b ${i===6?"cur":""}" style="height:${Math.max(3,Math.round(p*76))}px" title="${Math.round(p*100)}%"></span><small>${WD[dd.getDay()]}</small></div>`}).join("");
   const ens=[...Array(7)].map((_,i)=>{const x=S.days[dkey(addDays(cur,i-6))],e=x&&x.review&&x.review.energy;if(!e)return null;const v=[e.m,e.d,e.e].filter(Boolean);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null}).filter(v=>v!=null);
+  const yr=yearDots();
   return `<header class="phead"><div><div class="label">${WD[cur.getDay()]}, ${cur.getDate()} ${MON[cur.getMonth()]}</div><h1>Итоги <em>дня</em></h1></div>
     <div class="row"><button data-act="day" data-n="-1" aria-label="Предыдущий день">‹</button><button data-act="day" data-n="1" aria-label="Следующий день">›</button></div></header>
   <div class="stack-lg narrow">${welcome()}
@@ -589,7 +628,8 @@ function renderReview(){
     <div class="field"><label class="label" for="sleep">Сон, часов</label><input id="sleep" type="number" min="0" max="14" step="0.5" inputmode="decimal" data-act="sleep" value="${esc(r.sleep??"")}"></div></section>
   <section class="card stack"><h2>Одно улучшение на завтра</h2><textarea id="kaizen" data-act="kaizen" placeholder="Маленький шаг на 1% лучше. Например: телефон в другую комнату в 22:00">${esc(r.kaizen||"")}</textarea></section>
   <section class="card stack"><div class="spread"><h2>Последние 7 дней</h2><span class="small muted">${ens.length?"энергия в среднем "+(ens.reduce((a,b)=>a+b,0)/ens.length).toFixed(1):""}</span></div>
-    <div class="small muted">Доля сделанного: привычки и блоки</div><div class="bars">${bars}</div></section></div>`;
+    <div class="small muted">Доля сделанного: привычки и блоки</div><div class="bars">${bars}</div></section>
+  ${yr}</div>`;
 }
 
 /* ---------- GOALS ---------- */
@@ -600,6 +640,100 @@ function renderGoals(){
   return `<header class="phead"><div><div class="label">${S.dirs.length} направлений · 1 / 5 / 10 лет</div><h1>Куда <em>идёшь</em></h1></div></header>
   <div class="stack-lg">${welcome()}<div class="cols2 stack-lg">${cards}</div></div>`;
 }
+
+/* ---------- FOCUS TIMER ---------- */
+const FKEY="lifeos.focus";let F=null,fTick=null;
+try{F=JSON.parse(localStorage.getItem(FKEY)||"null")}catch(e){F=null}
+const fSave=()=>{try{F?localStorage.setItem(FKEY,JSON.stringify(F)):localStorage.removeItem(FKEY)}catch(e){}};
+const fLeft=()=>F?Math.max(0,F.paused?F.left:Math.round((F.end-Date.now())/1000)):0;
+const mmss=sec=>pad(Math.floor(sec/60))+":"+pad(sec%60);
+function focusTile(d){const mins=d.focus||0;
+  if(F)return `<section class="tile a-focus"><div class="spread"><span class="label">фокус идёт</span><button class="ghost small" style="color:inherit" data-act="focusopen">Открыть →</button></div><div class="fnum" id="ftile">${mmss(fLeft())}</div><div class="small" style="font-weight:700;opacity:.75">${esc(F.title)}</div></section>`;
+  return `<section class="tile a-focus"><div class="spread"><span class="label">фокус-таймер</span><span class="small" style="font-weight:700;opacity:.75">сегодня ${mins?dur(mins):"0 мин"}</span></div><div class="chips">${[25,50,90].map(m=>`<button class="chip" data-act="focusgo" data-m="${m}">▶ ${m} мин</button>`).join("")}</div></section>`}
+function focusStart(min,title,blockId){F={dur:min*60,end:Date.now()+min*60*1000,title:title||"Фокус",blockId:blockId||null,date:dkey(new Date()),paused:false,left:0};fSave();focusShow();render()}
+function focusShow(){let el=document.getElementById("focus");if(!el){el=document.createElement("div");el.id="focus";el.setAttribute("role","dialog");el.setAttribute("aria-modal","true");el.setAttribute("aria-label","Фокус-таймер");document.body.appendChild(el)}
+  el.classList.add("on");focusDraw();clearInterval(fTick);fTick=setInterval(focusDraw,1000)}
+function focusHide(){const el=document.getElementById("focus");if(el)el.classList.remove("on");clearInterval(fTick);fTick=null}
+function focusDraw(){const el=document.getElementById("focus");if(!F){focusHide();return}
+  const left=fLeft(),C=2*Math.PI*90,frac=F.dur?left/F.dur:0;
+  if(left<=0&&!F.done){F.done=true;fSave();const d=day(F.date);d.focus=(d.focus||0)+Math.round(F.dur/60);save();notify("Фокус закончен","«"+F.title+"» — "+Math.round(F.dur/60)+" мин. Отдохни 5 минут.");try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}}
+  const t=document.getElementById("ftile");if(t)t.textContent=mmss(left);
+  if(!el||!el.classList.contains("on"))return;
+  el.innerHTML=`<div class="fin"><div class="label" style="opacity:.75">${F.done?"готово":F.paused?"пауза":"фокус"}</div><h2 style="margin:0;font-size:1.4rem">${esc(F.title)}</h2>
+    <svg class="fring" viewBox="0 0 200 200"><circle class="bgc" cx="100" cy="100" r="90"/><circle class="fgc" cx="100" cy="100" r="90" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-frac)}" transform="rotate(-90 100 100)"/><text class="ftime" x="100" y="116" text-anchor="middle" font-size="44">${mmss(left)}</text></svg>
+    ${F.done?`<p style="margin:0;opacity:.8">Засчитано ${Math.round(F.dur/60)} мин фокуса.</p><div class="row" style="justify-content:center">${F.blockId?`<button class="go" data-act="focusdoneblock">Блок сделан ✓</button>`:""}<button data-act="focusstop">Закрыть</button></div>`
+      :`<div class="row" style="justify-content:center"><button class="go" data-act="focuspause">${F.paused?"Продолжить":"Пауза"}</button><button data-act="focusmin">Свернуть</button><button data-act="focusstop">Стоп</button></div><p class="small" style="margin:0;opacity:.7">Телефон экраном вниз. Одна задача.</p>`}</div>`}
+function notify(title,body){try{if(S.ui&&S.ui.notif&&"Notification" in window&&Notification.permission==="granted"){navigator.serviceWorker&&navigator.serviceWorker.getRegistration?navigator.serviceWorker.getRegistration().then(r=>r?r.showNotification(title,{body,icon:"icons/icon-192.png"}):new Notification(title,{body})).catch(()=>new Notification(title,{body})):new Notification(title,{body})}}catch(e){}toast(title)}
+/* reminders while the app is open */
+const notified={};
+setInterval(()=>{if(!S.ui||!S.ui.notif||S.example)return;const now=new Date(),k=dkey(now),nm=now.getHours()*60+now.getMinutes(),d=S.days[k];
+  const ev=[];(d&&d.blocks||[]).forEach(b=>ev.push({id:"b"+b.id,m:toMin(b.s),t:b.t}));classesFor(now).forEach(c=>ev.push({id:c.id,m:c.m,t:c.name+" (пара)"}));anchorsFor(now).filter(a=>a.kind==="prayer").forEach(a=>ev.push({id:a.id,m:a.m,t:a.name}));
+  ev.forEach(x=>{const key=k+x.id;if(!notified[key]&&x.m-nm<=5&&x.m-nm>=0){notified[key]=1;notify("Через "+(x.m-nm)+" мин: "+x.t,fromMin(x.m))}})},30000);
+
+/* ---------- AUTO-PLAN ---------- */
+function busyFor(dt){const d=day(dkey(dt)),buf=(S.profile.prayer&&S.profile.prayer.buffer)||0,out=[];
+  d.blocks.forEach(b=>out.push([toMin(b.s),toMin(b.e)]));classesFor(dt).forEach(c=>out.push([c.m,c.end]));
+  anchorsFor(dt).forEach(a=>{if(a.id==="wake"||a.id==="sleep"||a.kind==="info")return;out.push(a.kind==="prayer"?[a.m-buf-5,a.m+15]:[a.m,a.m+30])});
+  return out.sort((a,b)=>a[0]-b[0])}
+function freeGaps(dt){const isT=dkey(dt)===dkey(new Date()),nowM=new Date().getHours()*60+new Date().getMinutes();
+  let st=toMin(S.profile.wake||"07:00")+30,en=toMin(S.profile.sleep||"23:00")-30;if(en<=st)en=st+14*60;if(isT)st=Math.max(st,Math.ceil((nowM+10)/5)*5);
+  const gaps=[];let p=st;for(const [a,b] of busyFor(dt)){if(a>p)gaps.push([p,Math.min(a,en)]);p=Math.max(p,b);if(p>=en)break}if(p<en)gaps.push([p,en]);return gaps.filter(g=>g[1]-g[0]>=25)}
+function autoPlan(){const dt=cur,d=day(dkey(dt)),have=new Set(d.blocks.map(b=>b.t.trim().toLowerCase()));
+  const want=[];(d.priorities||[]).filter(x=>x&&x.trim()&&!have.has(x.trim().toLowerCase())).forEach(x=>want.push({t:x.trim(),m:50,dir:S.dirs[0]&&S.dirs[0].id}));
+  S.dirs.filter(dir=>!d.blocks.some(b=>b.dir===dir.id)).slice(0,4).forEach(dir=>want.push({t:dir.name,m:30,dir:dir.id}));
+  const gaps=freeGaps(dt).map(g=>[...g]),props=[];
+  for(const w of want){const g=gaps.find(g=>g[1]-g[0]>=w.m);if(!g)continue;props.push({id:uid(),t:w.t,s:fromMin(g[0]),e:fromMin(g[0]+w.m),dir:w.dir,on:true});g[0]+=w.m+10}
+  if(!props.length){sheet(`<div class="stack"><h2>Автоплан</h2><p class="muted" style="margin:0">${want.length?"Свободных окон под задачи не нашлось.":"Нечего предложить: впиши «Главное на день» или оставь направление без блока, и я найду для него окно."}</p><button class="ghost" data-act="close">Понятно</button></div>`);return}
+  sheet(`<form class="stack" id="apform"><h2>Автоплан</h2><p class="small muted" style="margin:0">Нашёл свободные окна. Отметь, что добавить, и поправь время. Без твоего «да» ничего не встанет в день.</p>
+    ${props.map(x=>{const dir=dirOf(x.dir);return `<div class="prop" style="--c:${cv(dir.c)}"><input type="checkbox" checked data-p="${x.id}" aria-label="Добавить ${esc(x.t)}"><input value="${esc(x.t)}" data-pt="${x.id}" aria-label="Название"><div class="times"><input type="time" value="${x.s}" data-ps="${x.id}" aria-label="Начало"><input type="time" value="${x.e}" data-pe="${x.id}" aria-label="Конец"></div></div>`}).join("")}
+    <button class="primary block" type="submit">Добавить выбранное</button><button type="button" class="ghost" data-act="close">Не надо</button></form>`);
+  layer.querySelector("#apform").addEventListener("submit",ev=>{ev.preventDefault();let n=0;
+    for(const x of props){const q=a=>layer.querySelector(`[data-${a}="${x.id}"]`);if(!q("p").checked)continue;const v={t:q("pt").value.trim()||x.t,s:q("ps").value,e:q("pe").value,dir:x.dir};if(toMin(v.e)<=toMin(v.s))continue;d.blocks.push({id:uid(),...v});n++}
+    save();layer.innerHTML="";render();toast(n?"Добавлено блоков: "+n:"Ничего не добавлено")})}
+
+/* ---------- CALENDAR EXPORT (.ics → Google / Apple Calendar) ---------- */
+function icsFor(days){const z=n=>pad(n),stamp=d=>d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+"T"+z(d.getHours())+z(d.getMinutes())+"00";
+  const escI=t=>String(t).replace(/\\/g,"\\\\").replace(/;/g,"\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
+  const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Life OS//RU","CALSCALE:GREGORIAN"];let n=0;
+  days.forEach(dt=>{const k=dkey(dt),d=S.days[k]||{blocks:[]};const ev=(d.blocks||[]).map(b=>({id:b.id,t:b.t,s:toMin(b.s),e:toMin(b.e),dsc:dirOf(b.dir).name})).concat(classesFor(dt).map(c=>({id:k+c.id,t:c.name,s:c.m,e:c.end,dsc:c.n+" пара"})));
+    ev.forEach(x=>{const a=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate(),0,x.s),b=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate(),0,x.e);
+      L.push("BEGIN:VEVENT","UID:"+x.id+"-"+k+"@lifeos","DTSTAMP:"+stamp(new Date()),"DTSTART:"+stamp(a),"DTEND:"+stamp(b),"SUMMARY:"+escI(x.t),"DESCRIPTION:"+escI(x.dsc+" · Life OS"),"END:VEVENT");n++})});
+  L.push("END:VCALENDAR");return {text:L.join("\r\n"),n}}
+function calSheet(){sheet(`<div class="stack"><h2>В Google Календарь</h2><p class="small muted" style="margin:0">Скачай файл с блоками и парами и открой его в календаре. В Google Календаре на компьютере: Настройки → Импорт и экспорт → Импорт. На iPhone файл откроется сразу.</p>
+  <button data-act="icsdl" data-n="1">Этот день</button><button class="soft" data-act="icsdl" data-n="7">Неделя с этого дня</button><button class="ghost" data-act="close">Закрыть</button></div>`)}
+
+/* ---------- DAY TEMPLATES ---------- */
+function templatesSheet(){const T=S.templates||(S.templates=[]),d=day();
+  sheet(`<div class="stack"><h2>Шаблоны дня</h2><p class="small muted" style="margin:0">Сохрани удачный день и ставь его одной кнопкой: учебный день, выходной, день спорта.</p>
+    ${T.length?T.map(t=>`<div class="tpl"><div><b>${esc(t.name)}</b><div class="small muted">${t.blocks.length} ${plural(t.blocks.length,"блок","блока","блоков")}</div></div><div class="row"><button class="soft small" data-act="tplapply" data-id="${t.id}">Поставить</button><button class="icon-btn" aria-label="Удалить шаблон" data-act="tpldel" data-id="${t.id}">×</button></div></div>`).join(""):`<div class="small muted">Пока нет шаблонов.</div>`}
+    ${d.blocks.length?`<div class="row" style="flex-wrap:nowrap"><input id="tpl-name" placeholder="Название, например «Учебный день»" aria-label="Название шаблона"><button data-act="tplsave">Сохранить день</button></div>`:`<div class="small muted">Чтобы сохранить шаблон, сначала добавь блоки в этот день.</div>`}
+    <button class="ghost" data-act="close">Закрыть</button></div>`)}
+
+/* ---------- MANDALA ---------- */
+let mView=null,mFull=false;
+function mandalaOf(){if(!S.mandala){const b=[...Array(9)].map(()=>Array(9).fill(""));const th=S.dirs.slice(0,8).map(d=>d.name);[0,1,2,3,5,6,7,8].forEach((c,i)=>b[4][c]=th[i]||"");S.mandala={b}}return S.mandala}
+function renderMandala(){const M=mandalaOf(),b=M.b;
+  const cellsOf=j=>[...Array(9)].map((_,i)=>j!==4&&i===4?b[4][j]:b[j][i]);
+  let body;
+  if(mFull){body=`<div class="ttwrap"><div class="mbig">${[...Array(9)].map((_,j)=>`<div class="blk3">${cellsOf(j).map((v,i)=>`<button class="${j===4&&i===4?"ctr":(i===4||j===4)?"th":""}" data-act="mzoom" data-j="${j===4?i===4?4:i:j}">${esc(v)}</button>`).join("")}</div>`).join("")}</div></div>`}
+  else{const j=mView==null?4:mView,cells=cellsOf(j);
+    body=`<div class="mgrid">${cells.map((v,i)=>{const isC=i===4,cls=j===4?(isC?"ctr":"th"):(isC?"th":"");
+      const ph=j===4?(isC?"Главная цель":"Тема "+(i<4?i+1:i)):(isC?"":"Шаг "+(i<4?i+1:i));
+      return `<div class="mc ${cls}"><textarea data-act="mcell" data-j="${j===4||!isC?j:4}" data-i="${j!==4&&isC?j:i}" placeholder="${ph}" aria-label="${ph||"Тема"}">${esc(v)}</textarea>${j===4&&!isC?`<button class="zoom" data-act="mzoom" data-j="${i}" aria-label="Открыть тему">⤢</button>`:""}</div>`}).join("")}</div>`}
+  const filled=b.reduce((a,r,j)=>a+r.filter((v,i)=>v&&v.trim()&&!(j!==4&&i===4)).length,0);
+  return `<header class="phead"><div><div class="label">мандала-чарт · заполнено ${filled} из 72</div><h1>Мандала <em>целей</em></h1></div></header>
+  <div class="stack-lg narrow">
+  <section class="card stack"><div class="spread">${!mFull&&mView!=null&&mView!==4?`<button class="soft small" data-act="mzoom" data-j="4">← К центру</button>`:`<span class="small muted" style="max-width:34ch">В центре главная цель, вокруг 8 тем. Открой тему ⤢ и распиши 8 шагов.</span>`}
+    <div class="seg"><button aria-pressed="${!mFull}" data-act="mfull" data-v="0">Тема</button><button aria-pressed="${mFull}" data-act="mfull" data-v="1">Вся карта</button></div></div>
+  ${!mFull&&mView!=null&&mView!==4?`<h2 style="margin:0">${esc(b[4][mView]||"Тема")}</h2>`:""}
+  ${body}</section>
+  <p class="small muted">Метод Харады: 1 цель → 8 тем → 64 конкретных шага. Шаги отсюда удобно ставить блоками в день.</p></div>`}
+
+/* ---------- YEAR IN DOTS ---------- */
+function yearDots(){const now=new Date(),y=now.getFullYear(),start=new Date(y,0,1),n=((y%4===0&&y%100!==0)||y%400===0)?366:365,tk=dkey(now);let dots="",done=0,past=0;
+  for(let i=0;i<n;i++){const dd=addDays(start,i),k=dkey(dd),fut=dd>now&&k!==tk,p=fut?0:dayProgress(k);if(!fut){past++;if(p>0)done++}
+    dots+=`<i class="${p>0?"p":""} ${k===tk?"t":""} ${fut?"f":""}" style="--v:${Math.max(.25,p).toFixed(2)}" title="${dd.getDate()} ${MON[dd.getMonth()]}${fut?"":" · "+Math.round(p*100)+"%"}"></i>`}
+  return `<section class="card stack"><div class="spread"><h2>Год точками</h2><span class="small muted">${y} · прошло ${Math.round(past/n*100)}%</span></div><div class="ydots" aria-label="Дни года">${dots}</div><div class="small muted">Одна точка = один день. Чем ярче, тем больше сделано. Активных дней: ${done} из ${past}.</div></section>`}
 
 /* ---------- TIMETABLE ---------- */
 let ttView=null,ttDay=null;
@@ -648,6 +782,7 @@ function renderSettings(){
       <div class="label">Поправка, мин</div><div class="grid3">${PRAYERS.map(([id,n])=>`<div class="field"><label class="small" for="adj-${id}">${n} <span class="mono muted">${fromMin(pt[id])}</span></label><input id="adj-${id}" type="number" step="1" data-act="adj" data-id="${id}" value="${pr.method.adj[id]||0}"></div>`).join("")}</div>
       <p class="small muted" style="margin:0">Это астрономический расчёт. Сверь с муфтиятом своего города и при необходимости поправь на несколько минут.</p>`:""}</section>
   <section class="card stack"><div class="spread"><div><h2>Расписание пар</h2><div class="small muted">${p.tt&&p.tt.on?"Пары стоят в дне"+(p.tt.alt?" · сейчас "+WKN[weekKind(new Date())]:""):"Уроки и пары сами встают в день. Есть числитель и знаменатель."}</div></div><button class="soft" data-act="opentt">Открыть</button></div></section>
+  <section class="card stack"><div class="spread"><div><h2>Напоминания</h2><div class="small muted">За 5 минут до блока, пары и намаза, и когда кончился фокус. Работает, пока Life OS открыт; фоновые придут вместе с Telegram-ботом.</div></div><input type="checkbox" data-act="snotif" ${(S.ui||{}).notif?"checked":""} aria-label="Напоминания"></div></section>
   <section class="card stack"><div class="spread"><h2>Цвета</h2><label class="row small" for="s-glass" style="font-weight:700">Стекло <input type="checkbox" id="s-glass" data-act="sglass" ${(S.ui||{}).glass!==false?"checked":""}></label></div>
     <div class="pals">${Object.entries(PALETTES).map(([id,p])=>`<button class="pal" style="--pbg:${p.bg};--pink:${p.ink}" aria-pressed="${((S.ui||{}).palette||"berry")===id}" data-act="palette" data-id="${id}"><span class="sw"><i style="background:${p.hero}"></i><i style="background:${p.t1}"></i><i style="background:${p.t2}"></i></span><b>${p.name}</b></button>`).join("")}</div></section>
   <section class="card stack"><h2>Направления жизни</h2>
@@ -731,15 +866,16 @@ const ICONS={
  habits:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="4"/><path d="M8 2v4M16 2v4M8 13l3 3 5-6"/></svg>',
  add:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
  review:'<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+ mandala:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>',
  goals:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>',
  settings:'<svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>'
 };
-const TABS=[["today","Сегодня"],["habits","Привычки"],["add",""],["review","Итоги"],["goals","Цели"]];
+const TABS=[["today","Сегодня"],["habits","Привычки"],["add",""],["review","Итоги"],["goals","Цели"],["mandala","Мандала"]];
 function render(){
   const y=window.scrollY;applyTheme();
   const top=`<div class="topbar"><div class="brand"><i>${esc((S.profile.name||"L").trim().charAt(0).toUpperCase()||"L")}</i>Life OS</div><nav class="toptabs" aria-label="Разделы">${TABS.filter(t=>t[0]!=="add").map(([id,n])=>`<button data-tab="${id}" ${id===tab?'aria-current="page"':""}>${n}</button>`).join("")}</nav>
     <div class="topact"><button class="hot addtop" data-tab="add">+ Блок</button><button class="icon-round" data-act="${tab==="settings"||tab==="tt"?"back":"opensettings"}" aria-label="${tab==="settings"||tab==="tt"?"Закрыть":"Настройки"}">${tab==="settings"||tab==="tt"?'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>':ICONS.settings}</button></div></div>`;
-  app.innerHTML=top+({today:renderToday,habits:renderHabits,review:renderReview,goals:renderGoals,settings:renderSettings,tt:renderTT})[tab]();
+  app.innerHTML=top+({today:renderToday,habits:renderHabits,review:renderReview,goals:renderGoals,settings:renderSettings,tt:renderTT,mandala:renderMandala})[tab]();
   document.getElementById("tabs").innerHTML=TABS.map(([id,n])=>id==="add"?`<button class="fab" data-tab="add" aria-label="Добавить блок"><span>${ICONS.add}</span></button>`:`<button data-tab="${id}" ${id===tab?'aria-current="page"':""}>${ICONS[id]}${n}</button>`).join("");
   window.scrollTo(0,y);
 }
@@ -758,6 +894,24 @@ document.addEventListener("click",e=>{
   else if(a==="opensettings"){tab="settings";render();window.scrollTo(0,0)}
   else if(a==="back"){tab="today";render()}
   else if(a==="opentt"){tab="tt";render();window.scrollTo(0,0)}
+  else if(a==="focusgo"){focusStart(+el.dataset.m,"Фокус")}
+  else if(a==="focusblock"){const b=day().blocks.find(x=>x.id===el.dataset.id);if(b)focusStart(Math.max(5,toMin(b.e)-toMin(b.s)),b.t,b.id)}
+  else if(a==="focusopen"){focusShow()}
+  else if(a==="focusmin"){focusHide();render()}
+  else if(a==="focuspause"){if(F.paused){F.end=Date.now()+F.left*1000;F.paused=false}else{F.left=fLeft();F.paused=true}fSave();focusDraw()}
+  else if(a==="focusstop"){if(F&&!F.done){const used=Math.round((F.dur-fLeft())/60);if(used>=1){const d=day(F.date);d.focus=(d.focus||0)+used;save()}}F=null;fSave();focusHide();render()}
+  else if(a==="focusdoneblock"){const d=day(F.date),b=d.blocks.find(x=>x.id===F.blockId);if(b)b.done=true;save();F=null;fSave();focusHide();render();toast("Блок отмечен")}
+  else if(a==="autoplan"){autoPlan()}
+  else if(a==="calsheet"){calSheet()}
+  else if(a==="icsdl"){const n=+el.dataset.n,r=icsFor([...Array(n)].map((_,i)=>addDays(cur,i)));if(!r.n){toast("В эти дни нет блоков");return}
+    const url=URL.createObjectURL(new Blob([r.text],{type:"text/calendar"})),x=document.createElement("a");x.href=url;x.download="lifeos-"+dkey(cur)+".ics";document.body.appendChild(x);x.click();x.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);toast("Событий в файле: "+r.n)}
+  else if(a==="templates"){templatesSheet()}
+  else if(a==="tplsave"){const nm=(document.getElementById("tpl-name").value||"").trim()||"Шаблон "+((S.templates||[]).length+1);S.templates=S.templates||[];S.templates.push({id:uid(),name:nm,blocks:day().blocks.map(b=>({t:b.t,s:b.s,e:b.e,dir:b.dir}))});save();templatesSheet();toast("Шаблон сохранён")}
+  else if(a==="tpldel"){S.templates=(S.templates||[]).filter(t=>t.id!==el.dataset.id);save();templatesSheet()}
+  else if(a==="tplapply"){const t=(S.templates||[]).find(x=>x.id===el.dataset.id),d=day();let n=0;if(t)t.blocks.forEach(b=>{if(!d.blocks.some(x=>x.t===b.t&&x.s===b.s)){d.blocks.push({id:uid(),...b});n++}});save();layer.innerHTML="";render();toast(n?"Поставлено блоков: "+n:"Эти блоки уже стоят")}
+  else if(a==="mzoom"){mFull=false;mView=+el.dataset.j;render();window.scrollTo(0,0)}
+  else if(a==="mfull"){mFull=el.dataset.v==="1";render()}
+  else if(a==="snotif"){}
   else if(a==="ttpick"){ttDay=+el.dataset.d;render()}
   else if(a==="ttview"){ttView=el.dataset.w;render()}
   else if(a==="ttnow"){const t=ttOf(),m=mondayOf(new Date());t.ref=dkey(el.dataset.w==="num"?m:addDays(m,-7));ttView=el.dataset.w;save();render()}
@@ -808,6 +962,8 @@ document.addEventListener("change",e=>{
   if(a==="pray"){day().prayed[el.dataset.id]=el.checked;save();render()}
   else if(a==="bdone"){const b=day().blocks.find(x=>x.id===el.dataset.id);b.done=el.checked;save();render()}
   else if(a==="hab"){day(dkey(new Date())).habits[el.dataset.id]=el.checked;save();render()}
+  else if(a==="snotif"){const on=el.checked;S.ui={...(S.ui||{}),notif:on};save();
+    if(on&&"Notification" in window&&Notification.permission!=="granted")Notification.requestPermission().then(p=>{if(p!=="granted"){toast("Браузер не разрешил уведомления");S.ui.notif=false;save();render()}else toast("Напоминания включены")});else if(on)toast("Напоминания включены")}
   else if(a==="tton"){ttOf().on=el.checked;save();render()}
   else if(a==="ttalt"){ttOf().alt=el.checked;save();render()}
   else if(a==="ttslot"){ttOf().slots[+el.dataset.i][el.dataset.k]=el.value;save();render()}
@@ -833,6 +989,7 @@ document.addEventListener("input",e=>{
   else if(a==="sname"){S.profile.name=el.value;save()}
   else if(a==="aname"){S.profile.anchors.find(x=>x.id===ds.id).name=el.value;save()}
   else if(a==="dname"){S.dirs.find(x=>x.id===ds.id).name=el.value;save()}
+  else if(a==="mcell"){const M=mandalaOf();M.b[+ds.j][+ds.i]=el.value;save()}
   else if(a==="ttcell"){const t=ttOf(),w=t.alt?(ttView||"num"):"num";t[w]=t[w]||{};const r=t[w][ds.d]=t[w][ds.d]||{};if(el.value.trim())r[ds.i]=el.value;else delete r[ds.i];if(!t.alt){t.den=t.den||{};t.den[ds.d]={...r}}save();
     const cell=document.querySelector(`.tt button[data-d="${ds.d}"]`);const btns=document.querySelectorAll(`.tt tr:nth-child(${+ds.i+2}) td button`);const b=btns[+ds.d];if(b){b.textContent=el.value;b.classList.toggle("has",!!el.value.trim())}}
 });
@@ -841,6 +998,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!layer.querySelecto
 render();
 if(S.example){let seen=false;try{seen=localStorage.getItem(KEY+".seen")==="1";localStorage.setItem(KEY+".seen","1")}catch(e){seen=true}if(!seen)onboard()}
 connect();
+if(F){focusShow();if(F.done)focusDraw()}
 })();
 </script>
 <script>if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));</script>
