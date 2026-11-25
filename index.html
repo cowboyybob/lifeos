@@ -332,7 +332,7 @@ nav.tabs button.fab span{width:46px;height:46px;border-radius:16px;background:va
 .steps i.on{background:var(--accent)}
 .lead{font-size:1.02rem;color:var(--sub);max-width:44ch;margin:0;font-weight:500}
 .listrow{display:grid;grid-template-columns:1fr 112px auto;gap:8px;align-items:center}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(98px + env(safe-area-inset-bottom,0px));background:var(--hero);color:var(--heroInk);padding:11px 18px;border-radius:16px;font-size:.88rem;font-weight:700;z-index:40}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(98px + env(safe-area-inset-bottom,0px));background:var(--hero);color:var(--heroInk);padding:11px 18px;border-radius:16px;font-size:.88rem;font-weight:700;z-index:40;pointer-events:none;max-width:calc(100vw - 32px);text-align:center}
 .welcome{background:var(--hero);color:var(--heroInk);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:10px}
 .welcome h2{font-size:1.3rem}
 .welcome p{margin:0;opacity:.85;font-weight:500}
@@ -928,22 +928,24 @@ function finishOB(){
 }
 
 /* ---------- login page ---------- */
-let loginEmail="",loginSent=false,loginWait=0,loginTimer=null;
+let loginEmail=(()=>{try{return localStorage.getItem("lifeos.email")||""}catch(e){return ""}})(),loginSent=false,loginWait=0,loginTimer=null;
 function loginTick(){clearInterval(loginTimer);loginTimer=setInterval(()=>{const b=document.querySelector("#loginform button");const left=Math.ceil((loginWait-Date.now())/1000);if(left<=0){clearInterval(loginTimer);if(b){b.disabled=false;b.textContent=loginSent?"Отправить ещё раз":"Получить письмо"}return}if(b){b.disabled=true;b.textContent="Ещё раз через "+left+" с"}},500)}
 function renderLogin(){
   if(!SB)return `<header class="phead"><div><h1>Вход</h1></div></header><div class="narrow"><section class="card"><p class="muted" style="margin:0">Вход сейчас недоступен. План хранится в этом браузере.</p></section></div>`;
   if(UID)return `<header class="phead"><div><div class="label">аккаунт</div><h1>Ты <em>вошёл</em></h1></div></header><div class="stack-lg narrow"><section class="card stack"><p style="margin:0">Почта: <b>${esc(EMAIL)}</b>. План сохраняется в аккаунте и открывается на любом устройстве.</p><div class="row"><button class="primary" data-tab="today">К плану</button><button class="ghost" data-act="signout">Выйти</button></div></section></div>`;
   return `<header class="phead"><div><div class="label">аккаунт</div><h1>Вход в <em>аккаунт</em></h1></div></header>
   <div class="stack-lg narrow">
-  <section class="card stack"><h2>1. Почта</h2><p class="small muted" style="margin:0">Пароль не нужен. На почту придёт письмо со ссылкой для входа.</p>
+  <section class="card stack"><h2>1. Почта</h2><p class="small muted" style="margin:0">Пароль не нужен. На почту придёт письмо с кодом и кнопкой для входа.</p>
     <form id="loginform" class="stack"><input id="login-email" type="email" required placeholder="you@example.com" autocomplete="email" inputmode="email" aria-label="Почта" value="${esc(loginEmail)}"><button class="primary block" type="submit">${loginSent?"Отправить ещё раз":"Получить письмо"}</button></form></section>
-  <section class="card stack"><h2>2. Ссылка из письма</h2><p class="small muted" style="margin:0">Можно просто нажать ссылку в письме. Если она открылась не в том браузере или в приложении почты, скопируй ссылку (долгое нажатие → «Копировать ссылку») и вставь сюда. Подойдёт и код из письма, если он там есть.</p>
-    <form id="linkform" class="stack"><textarea id="login-link" rows="3" placeholder="https://…supabase.co/auth/v1/verify?token=…  или код" aria-label="Ссылка или код из письма"></textarea><button class="primary block" type="submit">Войти</button></form></section>
+  <section class="card stack"><h2>2. Код из письма</h2><p class="small muted" style="margin:0">В письме есть код из цифр и кнопка «Войти». Нажми кнопку или впиши код сюда. Работает только самое последнее письмо. Если код не подходит, запроси новое письмо. Сюда можно вставить и ссылку из письма.</p>
+    <form id="linkform" class="stack"><input id="login-link" autocomplete="one-time-code" inputmode="numeric" placeholder="Код, например 123456" aria-label="Код или ссылка из письма" style="font-size:1.3rem;letter-spacing:.2em;text-align:center"><button class="primary block" type="submit">Войти</button></form></section>
   <p class="small muted">Входя, ты соглашаешься с <a href="privacy.html">политикой конфиденциальности</a>.</p>
   </div>`}
+function ruErr(m){m=String(m||"");if(/invalid or has expired|otp_expired|Token has expired|expired/i.test(m))return "Код или ссылка устарели. Работает только самое последнее письмо. Запроси новое и введи код из него";if(/after (\d+) second/.test(m))return "Подожди "+m.match(/after (\d+)/)[1]+" с и запроси письмо снова";if(/rate limit/i.test(m))return "Слишком много писем за час. Попробуй чуть позже";if(/invalid/i.test(m))return "Код не подошёл. Проверь цифры или запроси новое письмо";return m}
 async function loginWith(raw){raw=(raw||"").trim();if(!raw)return "Вставь ссылку из письма";
   try{
-    if(/^\d{6,8}$/.test(raw)){if(!loginEmail)return "Сначала впиши почту в шаге 1";const {error}=await SB.auth.verifyOtp({email:loginEmail,token:raw,type:"email"});return error&&error.message}
+    raw=/^[\d\s-]{6,12}$/.test(raw)?raw.replace(/\D/g,""):raw;
+    if(/^\d{6,8}$/.test(raw)){const ie=document.getElementById("login-email");if(!loginEmail&&ie)loginEmail=ie.value.trim();if(!loginEmail)try{loginEmail=localStorage.getItem("lifeos.email")||""}catch(e){}if(!loginEmail)return "Сначала впиши почту в шаге 1";const {error}=await SB.auth.verifyOtp({email:loginEmail,token:raw,type:"email"});return error&&error.message}
     const u=new URL(raw.replace(/&amp;/g,"&"));const h=new URLSearchParams(u.hash.replace(/^#/,"")),q=u.searchParams;
     if(h.get("access_token")&&h.get("refresh_token")){const {error}=await SB.auth.setSession({access_token:h.get("access_token"),refresh_token:h.get("refresh_token")});return error&&error.message}
     if(h.get("error_description")||q.get("error_description"))return (h.get("error_description")||q.get("error_description")).replace(/\+/g," ");
@@ -1159,14 +1161,15 @@ document.addEventListener("input",e=>{
     const b=document.querySelector(`.tt button[data-d="${ds.d}"][data-i="${ds.i}"]`);if(b){b.textContent=el.value;b.classList.toggle("has",!!el.value.trim())}}
 });
 document.addEventListener("submit",async e=>{
-  if(e.target.id==="linkform"){e.preventDefault();const err=await loginWith(document.getElementById("login-link").value);if(err)toast(err);else{toast("Готово, ты вошёл");tab="today";render()}return}
-  if(e.target.id!=="loginform")return;e.preventDefault();const em=document.getElementById("login-email").value.trim();loginEmail=em;const btn=e.target.querySelector("button");if(btn)btn.disabled=true;const err=await signIn(em);let msg;
-  if(!err){loginSent=true;loginWait=Date.now()+60000;if(tab==="login")render();msg="Письмо отправлено на "+em+". Проверь и папку «Спам»"}
+  if(e.target.id==="linkform"){e.preventDefault();const err=await loginWith(document.getElementById("login-link").value);if(err)toast(ruErr(err));else{toast("Готово, ты вошёл");tab="today";render()}return}
+  if(e.target.id!=="loginform")return;e.preventDefault();const em=document.getElementById("login-email").value.trim();loginEmail=em;try{localStorage.setItem("lifeos.email",em)}catch(e){}const btn=e.target.querySelector("button");if(btn)btn.disabled=true;const err=await signIn(em);let msg;
+  if(!err){loginSent=true;loginWait=Date.now()+60000;if(tab==="login")render();msg="Письмо отправлено на "+em+". Введи код из него ниже. Если письма нет, проверь «Спам»"}
   else{const m=String(err.message||"").match(/after (\d+) second/);if(m){loginWait=Date.now()+(+m[1])*1000;msg="Письмо уже отправлено. Новое можно запросить через "+m[1]+" с, а пока проверь почту и «Спам»"}else if(/rate limit/i.test(err.message||""))msg="Слишком много писем за час. Попробуй чуть позже";else msg="Не получилось отправить: "+err.message}
   if(btn)btn.disabled=false;loginTick();toast(msg)});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!layer.querySelector(".full"))layer.innerHTML="";if(e.key==="Enter"&&e.target.id==="ob-custom"){e.preventDefault();document.querySelector('[data-act="obcustom"]').click()}});
 render();
-if(S.example){let seen=false;try{seen=localStorage.getItem(KEY+".seen")==="1";localStorage.setItem(KEY+".seen","1")}catch(e){seen=true}if(!seen)onboard()}
+if(S.example&&!window.__authErr){let seen=false;try{seen=localStorage.getItem(KEY+".seen")==="1";localStorage.setItem(KEY+".seen","1")}catch(e){seen=true}if(!seen)onboard()}
+(()=>{try{const h=new URLSearchParams(location.hash.slice(1)+"&"+location.search.slice(1));const d=h.get("error_description")||h.get("error_code");if(d){history.replaceState(null,"",location.pathname);window.__authErr=1;tab="login";setTimeout(()=>{layer.innerHTML="";render();toast(ruErr(d.replace(/\+/g," ")))},400)}}catch(e){}})();
 connect();
 fetchOfficial();document.addEventListener("visibilitychange",()=>{if(!document.hidden)fetchOfficial()});
 if(F){focusShow();if(F.done)focusDraw()}
