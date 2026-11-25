@@ -510,7 +510,7 @@ const app=document.getElementById("app"),layer=document.getElementById("layer");
 const day=k=>{k=k||dkey(cur);if(!S.days[k])S.days[k]={blocks:[],priorities:[],habits:{},prayed:{},review:null};const d=S.days[k];d.blocks=d.blocks||[];d.priorities=d.priorities||[];d.habits=d.habits||{};d.prayed=d.prayed||{};return d};
 const dirOf=id=>S.dirs.find(d=>d.id===id)||{name:"Без направления",c:7};
 const cv=c=>`var(--c${c??7})`;
-function toast(t){document.querySelectorAll(".toast").forEach(x=>x.remove());const el=document.createElement("div");el.className="toast";el.setAttribute("role","status");el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),1800)}
+function toast(t){document.querySelectorAll(".toast").forEach(x=>x.remove());const el=document.createElement("div");el.className="toast";el.setAttribute("role","status");el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),Math.max(1800,t.length*55))}
 function greet(){const h=new Date().getHours();return h<5?"Доброй ночи":h<12?"Доброе утро":h<18?"Добрый день":"Добрый вечер"}
 function welcome(){return S.example?`<section class="welcome"><h2>Это пример чужого дня</h2><p>Настрой Life OS под себя: свои направления жизни, цели и опорные точки дня. Это займёт минуту.</p><div class="row"><button data-act="onboard">Настроить под себя</button>${SB?`<button class="ghost" data-act="openlogin">Уже есть аккаунт? Войти</button>`:""}</div></section>`:""}
 function anchorsFor(d){
@@ -928,7 +928,8 @@ function finishOB(){
 }
 
 /* ---------- login page ---------- */
-let loginEmail="",loginSent=false;
+let loginEmail="",loginSent=false,loginWait=0,loginTimer=null;
+function loginTick(){clearInterval(loginTimer);loginTimer=setInterval(()=>{const b=document.querySelector("#loginform button");const left=Math.ceil((loginWait-Date.now())/1000);if(left<=0){clearInterval(loginTimer);if(b){b.disabled=false;b.textContent=loginSent?"Отправить ещё раз":"Получить письмо"}return}if(b){b.disabled=true;b.textContent="Ещё раз через "+left+" с"}},500)}
 function renderLogin(){
   if(!SB)return `<header class="phead"><div><h1>Вход</h1></div></header><div class="narrow"><section class="card"><p class="muted" style="margin:0">Вход сейчас недоступен. План хранится в этом браузере.</p></section></div>`;
   if(UID)return `<header class="phead"><div><div class="label">аккаунт</div><h1>Ты <em>вошёл</em></h1></div></header><div class="stack-lg narrow"><section class="card stack"><p style="margin:0">Почта: <b>${esc(EMAIL)}</b>. План сохраняется в аккаунте и открывается на любом устройстве.</p><div class="row"><button class="primary" data-tab="today">К плану</button><button class="ghost" data-act="signout">Выйти</button></div></section></div>`;
@@ -1159,7 +1160,10 @@ document.addEventListener("input",e=>{
 });
 document.addEventListener("submit",async e=>{
   if(e.target.id==="linkform"){e.preventDefault();const err=await loginWith(document.getElementById("login-link").value);if(err)toast(err);else{toast("Готово, ты вошёл");tab="today";render()}return}
-  if(e.target.id!=="loginform")return;e.preventDefault();const em=document.getElementById("login-email").value.trim();loginEmail=em;const err=await signIn(em);if(!err){loginSent=true;if(tab==="login")render()}toast(err?"Не получилось отправить: "+err.message:"Письмо отправлено на "+em)});
+  if(e.target.id!=="loginform")return;e.preventDefault();const em=document.getElementById("login-email").value.trim();loginEmail=em;const btn=e.target.querySelector("button");if(btn)btn.disabled=true;const err=await signIn(em);let msg;
+  if(!err){loginSent=true;loginWait=Date.now()+60000;if(tab==="login")render();msg="Письмо отправлено на "+em+". Проверь и папку «Спам»"}
+  else{const m=String(err.message||"").match(/after (\d+) second/);if(m){loginWait=Date.now()+(+m[1])*1000;msg="Письмо уже отправлено. Новое можно запросить через "+m[1]+" с, а пока проверь почту и «Спам»"}else if(/rate limit/i.test(err.message||""))msg="Слишком много писем за час. Попробуй чуть позже";else msg="Не получилось отправить: "+err.message}
+  if(btn)btn.disabled=false;loginTick();toast(msg)});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!layer.querySelector(".full"))layer.innerHTML="";if(e.key==="Enter"&&e.target.id==="ob-custom"){e.preventDefault();document.querySelector('[data-act="obcustom"]').click()}});
 render();
 if(S.example){let seen=false;try{seen=localStorage.getItem(KEY+".seen")==="1";localStorage.setItem(KEY+".seen","1")}catch(e){seen=true}if(!seen)onboard()}
