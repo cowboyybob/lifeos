@@ -135,10 +135,26 @@ a{color:inherit}
 .pri:first-of-type{border-top:none}
 .pri .n{width:24px;height:24px;border-radius:8px;background:var(--t1);color:var(--t1i);display:grid;place-items:center;font-weight:800;font-size:.75rem}
 .pri input{background:transparent;padding:12px 2px;border-radius:0}
-.sched-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.sched-head{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;margin-bottom:8px}
+@media (max-width:640px){.sched-head h2{flex-basis:100%}.sched-tools{width:100%}.sched-tools .seg{margin-left:auto}}
 
 /* timeline */
 .rail{display:flex;flex-direction:column;gap:4px}
+.hwrap{overflow-x:auto;margin:0 -4px;padding:0 4px 8px;scroll-behavior:smooth}
+.htrack{position:relative}
+.htrack .hh{position:absolute;top:0;bottom:0;border-left:1px dashed color-mix(in srgb,var(--ink) 12%,transparent)}
+.htrack .hh span{position:absolute;top:0;left:4px;font-family:var(--mono);font-size:.68rem;color:var(--sub)}
+.htrack .hm{position:absolute;top:22px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.66rem;font-weight:800;white-space:nowrap;color:var(--sub)}
+.htrack .hm i{width:8px;height:8px;border-radius:50%;background:var(--ink);opacity:.45}
+.htrack .hm.pr i{background:var(--accent);opacity:1}
+.htrack .hb{position:absolute;height:58px;border-radius:14px;padding:6px 8px;background:color-mix(in srgb,var(--c) 16%,var(--surf));border-left:4px solid var(--c);overflow:hidden;text-align:left;color:var(--ink);display:flex;flex-direction:column;justify-content:center;gap:2px;font-size:.74rem;line-height:1.15}
+.htrack .hb b{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.htrack .hb small{font-family:var(--mono);font-size:.64rem;color:var(--sub)}
+.htrack .hb.done b{text-decoration:line-through;opacity:.55}
+.htrack .hb.cls{--c:var(--hero)}
+.htrack .hb.clash{outline:1.5px solid var(--warn);background:var(--warnSoft)}
+.htrack .hnow{position:absolute;top:18px;bottom:0;width:2px;background:var(--accent);border-radius:2px}
+.htrack .hnow::before{content:"";position:absolute;top:-4px;left:-4px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
 .ti{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:center}
 .ti .tm{font-family:var(--mono);font-size:.74rem;color:var(--sub);text-align:right}
 .ti .tm small{display:block;font-size:.64rem;opacity:.75}
@@ -301,6 +317,7 @@ nav.tabs button.fab span{width:46px;height:46px;border-radius:16px;background:va
   nav.tabs{display:none}
   .bento{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-areas:"hello hello sched sched" "hero hero sched sched" "ring streak sched sched" "focus focus sched sched" "week week sched sched" "tip tip sched sched" "pri pri sched sched";align-items:start}
   .a-sched{align-self:stretch}
+  .bento.hview{grid-template-areas:"hello hello ring streak" "hero hero focus focus" "sched sched sched sched" "week week tip tip" "pri pri tip tip"}
   .toast{bottom:28px}
   .sheet-bg{align-items:center}
   .sheet{border-radius:30px}
@@ -531,7 +548,7 @@ function renderToday(){
     for(const c of classes)if(c.m<e&&c.end>s)return `Налезает на пару «${c.name}» (${fromMin(c.m)}–${fromMin(c.end)}).`;
     for(const o of d.blocks)if(o!==b&&toMin(o.s)<e&&toMin(o.e)>s)return `Пересекается с «${o.t}».`;
     return null};
-  const nowM=new Date().getHours()*60+new Date().getMinutes();
+  const nowM=new Date().getHours()*60+new Date().getMinutes(),hv=(S.ui||{}).sview==="h";
   let html="",nowDone=!isToday,prevEnd=null;
   const nowLine=()=>`<div class="now" aria-label="Сейчас"><span>${fromMin(nowM)}</span><i></i></div>`;
   for(const it of items){
@@ -563,7 +580,7 @@ function renderToday(){
   const best=S.habits.map(h=>({h,n:streak(h)})).sort((a,b)=>b.n-a.n)[0];
   const dots=best?[...Array(7)].map((_,i)=>{const kk=dkey(addDays(new Date(),i-6)),x=S.days[kk];return `<i class="${x&&x.habits&&x.habits[best.h.id]?"on":""}"></i>`}).join(""):"";
   const wake=toMin(S.profile.wake||"07:00"),slp=toMin(S.profile.sleep||"23:00"),span=((slp-wake)+1440)%1440||1440,dayPct=isToday?Math.max(0,Math.min(1,(((nowM-wake)+1440)%1440)/span)):0;
-  return `<div class="bento">
+  return `<div class="bento ${hv?"hview":""}">
   <div class="a-hello"><div class="label">${WD[cur.getDay()]} · ${cur.getDate()} ${MON[cur.getMonth()]} ${S.example?"":syncPill()}</div><h1>${isToday?greet():"План на день"}${S.profile.name?`, <span>${esc(S.profile.name)}</span>`:""}</h1></div>
   <section class="tile a-hero"><div class="spread"><span class="label">${isToday?"сейчас":"день"}</span>${isToday?"":`<button class="ghost small" style="color:inherit" data-act="today">К сегодня</button>`}</div>
     <div class="clock">${isToday?fromMin(nowM):cur.getDate()+"."+pad(cur.getMonth()+1)}</div><div class="next">${nextTxt}</div>
@@ -576,7 +593,7 @@ function renderToday(){
   ${S.example?`<div style="grid-area:tip">${welcome()}</div>`:tipCard()}
   <section class="tile a-pri"><div class="spread" style="margin-bottom:2px"><span class="label">Главное на день</span><span class="small muted">до трёх</span></div>
     ${[0,1,2].map(i=>`<div class="pri"><span class="n">${i+1}</span><input id="pri${i}" data-act="pri" data-i="${i}" placeholder="${["Самое важное","Второе","Третье"][i]}" value="${esc(d.priorities[i]||"")}" aria-label="Приоритет ${i+1}"></div>`).join("")}</section>
-  <section class="tile a-sched"><div class="sched-head"><h2>Расписание</h2><div class="sched-tools"><button class="soft" data-act="autoplan">✦ Автоплан</button><button class="soft" data-act="templates">Шаблоны</button><button class="soft" data-act="calsheet">В календарь</button></div></div><div class="rail">${html}</div>
+  <section class="tile a-sched"><div class="sched-head"><h2>Расписание</h2><div class="sched-tools"><button class="soft" data-act="autoplan">✦ Автоплан</button><button class="soft" data-act="templates">Шаблоны</button><button class="soft" data-act="calsheet">В календарь</button><div class="seg" role="group" aria-label="Вид расписания"><button aria-pressed="${!hv}" data-act="sview" data-v="list">Список</button><button aria-pressed="${hv}" data-act="sview" data-v="h">Лента</button></div></div></div>${hv?hTimeline(items,clash,isToday,nowM):`<div class="rail">${html}</div>`}
     <button class="block soft" style="margin-top:10px" data-act="addblock">+ Добавить блок</button></section>
   </div>`;
 }
@@ -640,6 +657,23 @@ function renderGoals(){
   return `<header class="phead"><div><div class="label">${S.dirs.length} направлений · 1 / 5 / 10 лет</div><h1>Куда <em>идёшь</em></h1></div></header>
   <div class="stack-lg">${welcome()}<div class="cols2 stack-lg">${cards}</div></div>`;
 }
+
+/* ---------- HORIZONTAL TIMELINE ---------- */
+function hTimeline(items,clash,isToday,nowM){
+  const evs=items.filter(i=>i.type!=="anchor").map(i=>i.type==="block"?{s:i.m,e:Math.max(i.end,i.m+15),t:i.b.t,b:i.b,dir:dirOf(i.b.dir)}:{s:i.m,e:i.end,t:i.name,cls:true,n:i.n});
+  const marks=items.filter(i=>i.type==="anchor");
+  const all=[...evs.map(e=>e.s),...evs.map(e=>e.e),...marks.map(m=>m.m)];
+  let a=Math.floor(Math.min(toMin(S.profile.wake||"07:00"),...all)/60)*60,b=Math.ceil(Math.max(toMin(S.profile.sleep||"23:00"),...all)/60)*60;if(b<=a)b=a+16*60;
+  const PX=2.2,W=(b-a)*PX,x=m=>(m-a)*PX;
+  const lanes=[];evs.sort((p,q)=>p.s-q.s).forEach(e=>{let l=lanes.findIndex(end=>end<=e.s);if(l<0){l=lanes.length;lanes.push(0)}lanes[l]=e.e;e.l=l});
+  const top=68,H=top+Math.max(1,lanes.length)*64+4;
+  let h="";for(let m=a;m<=b;m+=60)h+=`<div class="hh" style="left:${x(m)}px"><span>${fromMin(m)}</span></div>`;
+  marks.forEach(m=>{h+=`<div class="hm ${m.kind==="prayer"?"pr":""}" style="left:${x(m.m)}px" title="${esc(m.name)} ${fromMin(m.m)}"><i></i>${esc(m.name)}</div>`});
+  evs.forEach(e=>{const st=`left:${x(e.s)}px;width:${Math.max(28,(e.e-e.s)*PX-4)}px;top:${top+e.l*64}px;${e.dir?`--c:${cv(e.dir.c)}`:""}`;
+    h+=e.cls?`<button class="hb cls" style="${st}" data-act="opentt" title="${esc(e.t)}"><b>${esc(e.t)}</b><small>${fromMin(e.s)}–${fromMin(e.e)} · ${e.n} пара</small></button>`
+      :`<button class="hb ${e.b.done?"done":""} ${clash(e.b)?"clash":""}" style="${st}" data-act="editblock" data-id="${e.b.id}" title="${esc(e.t)}"><b>${esc(e.t)}</b><small>${esc(e.b.s)}–${esc(e.b.e)}</small></button>`});
+  if(isToday&&nowM>=a&&nowM<=b)h+=`<div class="hnow" style="left:${x(nowM)}px" aria-label="Сейчас"></div>`;
+  return `<div class="hwrap" id="hwrap" data-now="${isToday?Math.max(0,x(nowM)-80):0}"><div class="htrack" style="width:${W+40}px;height:${H}px">${h}</div></div>`}
 
 /* ---------- FOCUS TIMER ---------- */
 const FKEY="lifeos.focus";let F=null,fTick=null;
@@ -879,7 +913,9 @@ function render(){
   app.innerHTML=top+({today:renderToday,habits:renderHabits,review:renderReview,goals:renderGoals,settings:renderSettings,tt:renderTT,mandala:renderMandala})[tab]();
   document.getElementById("tabs").innerHTML=TABS.map(([id,n])=>id==="add"?`<button class="fab" data-tab="add" aria-label="Добавить блок"><span>${ICONS.add}</span></button>`:`<button data-tab="${id}" ${id===tab?'aria-current="page"':""}>${ICONS[id]}${n}</button>`).join("");
   window.scrollTo(0,y);
+  const hw=document.getElementById("hwrap");if(hw){hw.style.scrollBehavior="auto";hw.scrollLeft=hwLeft!=null?hwLeft:+hw.dataset.now;hw.style.scrollBehavior="";hw.onscroll=()=>{hwLeft=hw.scrollLeft}}
 }
+let hwLeft=null;
 document.addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(!b)return;
   if(b.dataset.tab==="add"){if(tab!=="today"){tab="today";render()}blockSheet();return}
   tab=b.dataset.tab;if(tab!=="review")cur=new Date();render();window.scrollTo(0,0)});
@@ -903,6 +939,7 @@ document.addEventListener("click",e=>{
   else if(a==="focusstop"){if(F&&!F.done){const used=Math.round((F.dur-fLeft())/60);if(used>=1){const d=day(F.date);d.focus=(d.focus||0)+used;save()}}F=null;fSave();focusHide();render()}
   else if(a==="focusdoneblock"){const d=day(F.date),b=d.blocks.find(x=>x.id===F.blockId);if(b)b.done=true;save();F=null;fSave();focusHide();render();toast("Блок отмечен")}
   else if(a==="autoplan"){autoPlan()}
+  else if(a==="sview"){S.ui={...(S.ui||{}),sview:el.dataset.v};save();render();const w=document.getElementById("hwrap");if(w){w.style.scrollBehavior="auto";w.scrollLeft=+w.dataset.now;w.style.scrollBehavior=""}}
   else if(a==="tglink"){(async()=>{if(!SB||!UID)return;const code=Array.from(crypto.getRandomValues(new Uint8Array(9)),b=>"abcdefghijkmnpqrstuvwxyz23456789"[b%32]).join("");
     const w=window.open("about:blank","_blank");
     const {error}=await SB.from("lifeos_docs").upsert({user_id:UID,id:"tglink",body:{code,exp:Date.now()+15*60000,tz:-new Date().getTimezoneOffset()},updated_at:new Date().toISOString()});
