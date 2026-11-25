@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
-<script src="config.js?v=7"></script>
+<script src="config.js?v=9"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <title>Life OS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -237,6 +237,11 @@ a{color:inherit}
 .ttdays button[aria-pressed=true]{background:var(--hero);color:var(--heroInk)}
 @media (max-width:760px){
   input,textarea,select{font-size:16px!important}
+  .icon-btn{min-width:40px;min-height:40px;display:inline-grid;place-items:center}
+  .chip,button.small,.ghost.small,.soft.small{min-height:40px}
+  .seg button{min-height:38px}
+  .sched-tools button{min-height:38px}
+  .week button{min-height:52px}
   .ttwrap.ttgrid:not(.hz){display:none}
   .ttdays{display:flex}
   .slotrow{grid-template-columns:22px 1fr 1fr 28px;gap:6px}
@@ -404,6 +409,15 @@ const CITIES={
   "Стамбул":{lat:41.0082,lng:28.9784,tz:3},"Берлин":{lat:52.52,lng:13.405,tz:1},"Лондон":{lat:51.5072,lng:-.1276,tz:0}
 };
 const BISHKEK_ADJ={fajr:-1,sunrise:-1,dhuhr:0,asr:2,maghrib:7,isha:0};
+/* official times: muftiyat.kg via our function; other days are shifted by today's official-vs-calculated difference */
+const PT_MAP={"Бишкек":"Бишкек","Ош":"Ош шаары"};
+let OFF=null;try{OFF=JSON.parse(localStorage.getItem("lifeos.pt")||"null")}catch(e){}
+let ptBusy=0;
+async function fetchOfficial(force){const pr=S.profile.prayer;if(!pr||!pr.on||!PT_MAP[pr.city]||!CFG.supabaseUrl)return;if(!force&&OFF&&OFF.date===dkey(new Date()))return;if(Date.now()-ptBusy<60000)return;ptBusy=Date.now();
+  try{const j=await fetch(CFG.supabaseUrl+"/functions/v1/lifeos-bot?prayer=1").then(r=>r.json());if(j&&j.cities&&j.date&&Object.keys(j.cities).length){OFF={date:j.date,cities:j.cities,at:Date.now()};try{localStorage.setItem("lifeos.pt",JSON.stringify(OFF))}catch(e){}render()}}catch(e){}}
+function ptFor(d,pr){const pt=prayerTimes(d,pr.lat,pr.lng,pr.tz,pr.method),o=OFF&&PT_MAP[pr.city]&&OFF.cities[PT_MAP[pr.city]];if(!o)return pt;
+  const od=new Date(OFF.date+"T00:00");if(dkey(d)===OFF.date){const r={...pt,src:"official"};PRAYERS.forEach(([id])=>{if(o[id])r[id]=toMin(o[id])});return r}
+  if(Math.abs(d-od)>45*864e5)return pt;const base=prayerTimes(od,pr.lat,pr.lng,pr.tz,pr.method),r={...pt,src:"fitted"};PRAYERS.forEach(([id])=>{if(o[id])r[id]=pt[id]+(toMin(o[id])-base[id])});return r}
 function prayerCfg(city,on){return {on:!!on,city,...CITIES[city],buffer:10,method:{fajr:18,isha:city==="Бишкек"?16:17,asr:2,adj:city==="Бишкек"?{...BISHKEK_ADJ}:{}}}}
 
 /* ---------- presets ---------- */
@@ -441,33 +455,44 @@ const CFG=window.LIFEOS_CONFIG||{};
 const SB=(CFG.supabaseUrl&&CFG.supabaseAnonKey&&window.supabase)?window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseAnonKey):null;
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(UID&&!S.example){clearTimeout(flushT);flushT=setTimeout(flush,700)}}
 function docsOf(st){const o={state:{v:2,profile:st.profile,dirs:st.dirs,habits:st.habits,goals:st.goals,ui:st.ui||{},mandala:st.mandala||null,templates:st.templates||[]}};for(const k in st.days)o["day-"+k]={date:k,...st.days[k]};return o}
+const sortK=o=>Array.isArray(o)?o.map(sortK):o&&typeof o==="object"?Object.keys(o).sort().reduce((a,k)=>(a[k]=sortK(o[k]),a),{}):o;
+const canon=o=>JSON.stringify(sortK(o));
 async function flush(){
   if(writing){flushT=setTimeout(flush,700);return}writing=true;
-  try{const docs=docsOf(S),rows=[];for(const id in docs){const j=JSON.stringify(docs[id]);if(lastSent[id]!==j)rows.push({user_id:UID,id,body:docs[id],updated_at:new Date().toISOString()})}
-    if(rows.length){const {error}=await SB.from("lifeos_docs").upsert(rows);if(error)throw error;rows.forEach(r=>lastSent[r.id]=JSON.stringify(r.body))}
+  try{const docs=docsOf(S),rows=[];for(const id in docs){const j=canon(docs[id]);if(lastSent[id]!==j)rows.push({user_id:UID,id,body:docs[id],updated_at:new Date().toISOString()})}
+    if(rows.length){const {error}=await SB.from("lifeos_docs").upsert(rows);if(error)throw error;rows.forEach(r=>lastSent[r.id]=canon(r.body))}
     setSync("cloud")}
   catch(e){setSync("error");if(!flush.warned){flush.warned=1;toast("Не получается сохранить. Если не пройдёт, напиши в Telegram @sn14kn")}}finally{writing=false}
 }
 function syncPill(){const t={cloud:["В аккаунте","ok"],loading:["Загружаю…",""],error:["Нет связи, сохраню позже","warn"],local:["В этом браузере",""]}[sync];return `<span class="pill ${t[1]} syncpill">${t[0]}</span>`}
 function setSync(m){sync=m;document.querySelectorAll(".syncpill").forEach(el=>el.outerHTML=syncPill())}
 async function pull(){
-  if(!SB||!UID)return;setSync("loading");
+  if(!SB||!UID)return;const first=!Object.keys(lastSent).length;if(first)setSync("loading");
   const {data,error}=await SB.from("lifeos_docs").select("id,body").eq("user_id",UID);
   if(error){setSync("error");return}
   if(!data.length){setSync("cloud");if(!S.example)save();return}
-  const st={v:2,days:{}};data.forEach(r=>{lastSent[r.id]=JSON.stringify(r.body);const b=JSON.parse(JSON.stringify(r.body));
-    if(r.id==="state")Object.assign(st,b);else if(r.id.startsWith("day-")){delete b.date;st.days[r.id.slice(4)]=b}});
-  setSync("cloud");if(!st.profile)return;st.example=false;
-  if(!S.example&&JSON.stringify(docsOf(st))===JSON.stringify(docsOf(S)))return;
-  S=st;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+  const prev={...lastSent},local=docsOf(S),remote={};data.forEach(r=>{if(r.id==="state"||r.id.startsWith("day-"))remote[r.id]=r.body});
+  if(!remote.state){setSync("cloud");return}
+  let changed=false;const st=first||S.example?{v:2,days:{},example:false}:{...S,days:{...S.days}};
+  for(const id in remote){const rc=canon(remote[id]),lc=local[id]?canon(local[id]):null;
+    if(!first&&!S.example&&lc!==null&&prev[id]!==undefined&&lc!==prev[id]&&lc!==rc)continue; // local edit not yet sent: keep it
+    lastSent[id]=rc;if(lc===rc&&!first)continue;changed=true;
+    const b=JSON.parse(JSON.stringify(remote[id]));
+    if(id==="state")Object.assign(st,b);else{delete b.date;st.days[id.slice(4)]=b}}
+  setSync("cloud");if(!changed&&!first)return;
+  if(first&&!S.example&&canon(docsOf(st))===canon(docsOf(S)))return;
+  st.example=false;S=st;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
   if(layer.querySelector(".full"))layer.innerHTML="";
   const a=document.activeElement;if(a&&a.closest&&a.closest("#app")&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))dirtyRender=true;else render();
 }
+let rtChan=null,rtT=null;
+function live(){if(!SB||!UID||rtChan)return;try{rtChan=SB.channel("docs-"+UID).on("postgres_changes",{event:"*",schema:"public",table:"lifeos_docs",filter:"user_id=eq."+UID},()=>{clearTimeout(rtT);rtT=setTimeout(()=>{if(!writing)pull()},800)}).subscribe()}catch(e){}}
+function unlive(){if(rtChan){try{SB.removeChannel(rtChan)}catch(e){}rtChan=null}}
 async function connect(){
   if(!SB)return;
   const apply=async session=>{const u=session&&session.user;const was=UID;UID=u?u.id:null;EMAIL=u?u.email:"";DB=UID?SB:null;
     if(!UID){setSync("local");if(tab==="settings")render();return}
-    if(was!==UID){lastSent={};await pull();if(tab==="settings")render()}};
+    if(was!==UID){lastSent={};unlive();await pull();live();if(tab==="settings")render()}};
   const {data}=await SB.auth.getSession();await apply(data.session);
   SB.auth.onAuthStateChange((_e,session)=>apply(session));
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&UID&&!writing)pull()});
@@ -476,7 +501,7 @@ async function signIn(email){
   const {error}=await SB.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});
   return error;
 }
-async function signOut(){await SB.auth.signOut();UID=null;DB=null;lastSent={};setSync("local");render();toast("Вышел из аккаунта. План остался в этом браузере")}
+async function signOut(){unlive();await SB.auth.signOut();UID=null;DB=null;lastSent={};setSync("local");render();toast("Вышел из аккаунта. План остался в этом браузере")}
 document.addEventListener("focusout",()=>{if(dirtyRender)setTimeout(()=>{const a=document.activeElement;if(!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))){dirtyRender=false;render()}},0)});
 
 /* ---------- helpers ---------- */
@@ -493,7 +518,7 @@ function anchorsFor(d){
   if(p.wake)out.push({id:"wake",name:"Подъём",m:toMin(p.wake),kind:"fixed"});
   (p.anchors||[]).forEach(a=>out.push({id:a.id,name:a.name,m:toMin(a.time),kind:"fixed"}));
   if(p.sleep)out.push({id:"sleep",name:"Отбой",m:toMin(p.sleep),kind:"fixed"});
-  if(p.prayer&&p.prayer.on){const pt=prayerTimes(d,p.prayer.lat,p.prayer.lng,p.prayer.tz,p.prayer.method);PRAYERS.forEach(([id,n])=>out.push({id,name:n,m:pt[id],kind:id==="sunrise"?"info":"prayer"}))}
+  if(p.prayer&&p.prayer.on){const pt=ptFor(d,p.prayer);PRAYERS.forEach(([id,n])=>out.push({id,name:n,m:pt[id],kind:id==="sunrise"?"info":"prayer"}))}
   return out;
 }
 /* ---------- class timetable (числитель / знаменатель) ---------- */
@@ -828,7 +853,7 @@ function renderTT(){
 
 /* ---------- SETTINGS ---------- */
 function renderSettings(){
-  const p=S.profile,pr=p.prayer||prayerCfg("Бишкек",false),pt=pr.on?prayerTimes(new Date(),pr.lat,pr.lng,pr.tz,pr.method):null;
+  const p=S.profile,pr=p.prayer||prayerCfg("Бишкек",false),pt=pr.on?ptFor(new Date(),pr):null;
   return `<header class="phead"><div><div class="label">профиль</div><h1>Настрой<em>ки</em></h1></div></header>
   <div class="stack-lg narrow">${welcome()}
   <section class="card stack"><div class="field"><label class="label" for="s-name">Имя</label><input id="s-name" data-act="sname" value="${esc(p.name)}"></div>
@@ -841,7 +866,7 @@ function renderSettings(){
       <div class="field"><label class="label" for="s-buf">Запас до намаза, мин</label><input id="s-buf" type="number" min="0" max="40" data-act="sbuf" value="${pr.buffer}"></div></div>
       <div class="field"><label class="label" for="s-asr">Аср</label><select id="s-asr" data-act="sasr"><option value="2" ${pr.method.asr===2?"selected":""}>Ханафитский</option><option value="1" ${pr.method.asr===1?"selected":""}>Стандартный</option></select></div>
       <div class="label">Поправка, мин</div><div class="grid3">${PRAYERS.map(([id,n])=>`<div class="field"><label class="small" for="adj-${id}">${n} <span class="mono muted">${fromMin(pt[id])}</span></label><input id="adj-${id}" type="number" step="1" data-act="adj" data-id="${id}" value="${pr.method.adj[id]||0}"></div>`).join("")}</div>
-      <p class="small muted" style="margin:0">Это астрономический расчёт. Сверь с муфтиятом своего города и при необходимости поправь на несколько минут.</p>`:""}</section>
+      <p class="small muted" style="margin:0">${pt&&pt.src==="official"?`✓ Сверено с muftiyat.kg сегодня (${esc(OFF.date)}). Каждый день время берётся оттуда автоматически, поправки ниже не нужны.`:PT_MAP[pr.city]?"Сверяю с muftiyat.kg… Если нет интернета, показываю расчёт.":"Это астрономический расчёт. Сверь с муфтиятом своего города и при необходимости поправь на несколько минут."}</p>`:""}</section>
   <section class="card stack"><div class="spread"><div><h2>Расписание пар</h2><div class="small muted">${p.tt&&p.tt.on?"Пары стоят в дне"+(p.tt.alt?" · сейчас "+WKN[weekKind(new Date())]:""):"Уроки и пары сами встают в день. Есть числитель и знаменатель."}</div></div><button class="soft" data-act="opentt">Открыть</button></div></section>
   <section class="card stack" id="s-notif"><div class="spread"><div><h2>Напоминания</h2><div class="small muted">За 5 минут до блока, пары и намаза, и когда кончился фокус. Работает, пока Life OS открыт; фоновые придут вместе с Telegram-ботом.</div></div><input type="checkbox" data-act="snotif" ${(S.ui||{}).notif?"checked":""} aria-label="Напоминания"></div></section>
   <section class="card stack" id="s-colors"><div class="spread"><h2>Цвета</h2><label class="row small" for="s-glass" style="font-weight:700">Стекло <input type="checkbox" id="s-glass" data-act="sglass" ${(S.ui||{}).glass!==false?"checked":""}></label></div>
@@ -856,7 +881,7 @@ function renderSettings(){
     <button data-act="onboard">Пройти настройку заново</button></section>
   <section class="card stack" id="s-tg"><div class="spread"><div><h2>Telegram-бот</h2><div class="small muted" id="tgstat">${!CFG.telegramBot?"Скоро: план дня утром, напоминания о блоках и парах, добавление блоков из чата.":!UID?"Войди по почте выше, и бот сможет присылать план и напоминания.":"План утром, напоминания за 5–10 минут, /add прямо из чата."}</div></div>${CFG.telegramBot&&UID?`<button class="soft" data-act="tglink">Подключить</button>`:""}</div></section>
   <section class="card stack" id="s-help"><h2>Что-то не работает?</h2><p class="small muted" style="margin:0">Напиши автору, разберёмся.</p>
-    <div class="row"><a class="chip" href="https://t.me/sn14kn" target="_blank" rel="noopener">Telegram @sn14kn</a><a class="chip" href="https://wa.me/996597189464" target="_blank" rel="noopener">WhatsApp +996 597 189 464</a></div></section></div>`;
+    <div class="row"><a class="chip" href="https://t.me/sn14kn" target="_blank" rel="noopener">Написать в Telegram</a><a class="chip" href="https://wa.me/996597189464" target="_blank" rel="noopener">Написать в WhatsApp</a></div></section></div>`;
 }
 
 /* ---------- onboarding ---------- */
@@ -888,7 +913,7 @@ function drawOB(){
       <div class="chips">${sugg.map(s=>{const on=OB.habits.includes(s.name);return `<button class="chip" style="--c:${cv(s.c)}" aria-pressed="${on}" data-act="obhab" data-name="${esc(s.name)}"><span class="dot" style="--c:${cv(s.c)}"></span>${esc(s.name)}</button>`}).join("")||`<p class="muted">Для твоих направлений нет готовых идей. Добавишь свои во вкладке «Привычки».</p>`}</div>`}
   layer.innerHTML=`<div class="full" role="dialog" aria-modal="true" aria-label="Настройка Life OS"><div class="in">${steps}${body}
     <div style="margin-top:auto" class="stack"><button class="primary block" data-act="obnext" ${can?"":"disabled"}>${next}</button>
-    <div class="spread">${st?`<button class="ghost" data-act="obback">Назад</button>`:`<span></span>`}<button class="ghost" data-act="obclose">${S.example?"Посмотреть пример":"Отмена"}</button></div></div></div></div>`;
+    <div class="spread">${st?`<button class="ghost" data-act="obback">Назад</button>`:`<span></span>`}<button class="ghost" data-act="obclose">${S.example?"Пропустить":"Отмена"}</button></div>${S.example&&SB&&!st?`<button class="ghost" data-act="oblogin">Уже есть аккаунт? Войти</button>`:""}</div></div></div>`;
 }
 function finishOB(){
   const dirs=OB.dirs.map((n,i)=>{const old=!S.example&&S.dirs.find(d=>d.name===n);return old?{...old,c:old.c??i%8}:{id:uid(),name:n,c:i%8}});
@@ -985,7 +1010,7 @@ function render(){
     <div class="topact"><button class="hot addtop" data-tab="add">+ Блок</button><button class="soft addtop" data-tab="menu">Меню</button><button class="icon-round" data-act="${tab==="settings"?"back":"opensettings"}" aria-label="${tab==="settings"?"Закрыть":"Настройки"}">${tab==="settings"?'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>':ICONS.settings}</button></div></div>`;
   app.innerHTML=top+({today:renderToday,habits:renderHabits,review:renderReview,goals:renderGoals,settings:renderSettings,tt:renderTT,mandala:renderMandala,login:renderLogin})[tab]();
   document.getElementById("tabs").innerHTML=BTABS.map(([id,n])=>id==="add"?`<button class="fab" data-tab="add" aria-label="Добавить блок"><span>${ICONS.add}</span></button>`:`<button data-tab="${id}" ${id===tab?'aria-current="page"':""}>${ICONS[id]}${n}</button>`).join("");
-  window.scrollTo(0,y);
+  window.scrollTo(0,y);setTimeout(()=>fetchOfficial(),0);
   const hw=document.getElementById("hwrap");if(hw){hw.style.scrollBehavior="auto";hw.scrollLeft=hwLeft!=null?hwLeft:+hw.dataset.now;hw.style.scrollBehavior="";hw.onscroll=()=>{hwLeft=hw.scrollLeft}}
 }
 let hwLeft=null;
@@ -1071,7 +1096,8 @@ document.addEventListener("click",e=>{
   /* onboarding */
   else if(a==="obnext"){if(OB.step<3){OB.step++;drawOB()}else finishOB()}
   else if(a==="obback"){OB.step--;drawOB()}
-  else if(a==="obclose"){OB=null;layer.innerHTML=""}
+  else if(a==="obclose"){if(S.example){if(!OB.dirs.length)OB.dirs=PRESETS.slice(0,3).map(p=>p[0]);finishOB()}else{OB=null;layer.innerHTML=""}}
+  else if(a==="oblogin"){OB=null;layer.innerHTML="";tab="login";render();window.scrollTo(0,0)}
   else if(a==="obdir"){const n=el.dataset.name,i=OB.dirs.indexOf(n);if(i>=0)OB.dirs.splice(i,1);else if(OB.dirs.length<8)OB.dirs.push(n);else toast("Не больше 8 направлений");drawOB()}
   else if(a==="obcustom"){const n=OB.custom.trim();if(n&&!OB.dirs.includes(n)&&OB.dirs.length<8)OB.dirs.push(n);OB.custom="";drawOB()}
   else if(a==="obaadd"){OB.anchors.push({id:uid(),name:el.dataset.name,time:el.dataset.time});drawOB()}
@@ -1092,8 +1118,8 @@ document.addEventListener("change",e=>{
   else if(a==="ttalt"){ttOf().alt=el.checked;save();render()}
   else if(a==="ttslot"){ttOf().slots[+el.dataset.i][el.dataset.k]=el.value;save();render()}
   else if(a==="sglass"){S.ui={...(S.ui||{}),glass:el.checked};applyTheme();save()}
-  else if(a==="sprayer"){S.profile.prayer={...(pr||prayerCfg("Бишкек",false)),on:el.checked};save();render()}
-  else if(a==="scity"){S.profile.prayer={...prayerCfg(el.value,true),buffer:pr.buffer};save();render()}
+  else if(a==="sprayer"){S.profile.prayer={...(pr||prayerCfg("Бишкек",false)),on:el.checked};save();render();fetchOfficial()}
+  else if(a==="scity"){S.profile.prayer={...prayerCfg(el.value,true),buffer:pr.buffer};save();render();fetchOfficial(true)}
   else if(a==="sbuf"){pr.buffer=Math.max(0,+el.value||0);save()}
   else if(a==="sasr"){pr.method.asr=+el.value;save();render()}
   else if(a==="adj"){pr.method.adj[el.dataset.id]=+el.value||0;save();render()}
@@ -1124,6 +1150,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!layer.querySelecto
 render();
 if(S.example){let seen=false;try{seen=localStorage.getItem(KEY+".seen")==="1";localStorage.setItem(KEY+".seen","1")}catch(e){seen=true}if(!seen)onboard()}
 connect();
+fetchOfficial();document.addEventListener("visibilitychange",()=>{if(!document.hidden)fetchOfficial()});
 if(F){focusShow();if(F.done)focusDraw()}
 })();
 </script>

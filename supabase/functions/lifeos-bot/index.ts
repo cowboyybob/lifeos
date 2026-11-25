@@ -107,8 +107,27 @@ async function cron() {
   return n;
 }
 
+// Official prayer times from muftiyat.kg (all Kyrgyzstan cities, today). Cached ~1h.
+let ptCache: { at: number; data: any } | null = null;
+async function officialTimes() {
+  if (ptCache && Date.now() - ptCache.at < 3600e3) return ptCache.data;
+  const html = await fetch("https://muftiyat.kg/", { headers: { "User-Agent": "LifeOS/1.0" } }).then(r => r.text());
+  const rx = /'title': '([^']+)', 'prayertimes': \{[^}]*?'date': '([\d-]+)'[^}]*?'fajr': '([\d:]+)', 'sunrise': '([\d:]+)', 'dhuhr': '([\d:]+)', 'asr': '([\d:]+)', 'sunset': '([\d:]+)', 'maghrib': '([\d:]+)', 'isha': '([\d:]+)'/g;
+  const cities: Record<string, any> = {}; let date = ""; let m;
+  while ((m = rx.exec(html))) { date = m[2]; cities[m[1]] = { fajr: m[3], sunrise: m[4], dhuhr: m[5], asr: m[6], sunset: m[7], maghrib: m[8], isha: m[9] }; }
+  const data = { source: "muftiyat.kg", date, cities };
+  if (Object.keys(cities).length) ptCache = { at: Date.now(), data };
+  return data;
+}
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, OPTIONS" };
+
 Deno.serve(async (req) => {
   const url = new URL(req.url);
+  if (url.searchParams.get("prayer")) {
+    if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
+    try { return Response.json(await officialTimes(), { headers: { ...CORS, "Cache-Control": "public, max-age=1800" } }); }
+    catch (e) { return Response.json({ error: String(e) }, { status: 502, headers: CORS }); }
+  }
   if (!TOKEN) return new Response("TELEGRAM_BOT_TOKEN secret is missing", { status: 500 });
   const secret = (await sha("lifeos:" + TOKEN)).slice(0, 48);
   if (url.searchParams.get("setup")) {
