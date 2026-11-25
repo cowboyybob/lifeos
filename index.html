@@ -158,6 +158,21 @@ a{color:inherit}
 .anc input{margin-left:auto}
 .icon-btn{background:transparent;color:var(--sub);padding:4px 8px;font-size:1rem;line-height:1;border-radius:10px}
 .gap{display:grid;grid-template-columns:48px 1fr;gap:10px}
+.ti.cls .blk{background:color-mix(in srgb,var(--hero) 12%,transparent)}
+.ti.cls .blk::before{background:var(--hero)}
+.ttwrap{overflow-x:auto;margin:0 -4px;padding:0 4px}
+.tt{width:100%;border-collapse:separate;border-spacing:4px;min-width:560px;table-layout:fixed}
+.tt th{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--sub);text-align:left;padding:2px 4px}
+.tt th.slot{width:62px;font-family:var(--mono);text-transform:none;letter-spacing:0;font-weight:600}
+.tt td{padding:0}
+.tt td button{width:100%;min-height:46px;text-align:left;padding:6px 8px;border-radius:12px;font-size:.74rem;font-weight:700;line-height:1.2;background:color-mix(in srgb,var(--ink) 5%,transparent);color:var(--ink);overflow-wrap:anywhere}
+.tt td button.has{background:color-mix(in srgb,var(--hero) 14%,transparent)}
+.tt td button.sel{outline:2px solid var(--accent)}
+.ttrow{display:grid;grid-template-columns:30px 1fr;gap:8px;align-items:center}
+.ttrow b{font-family:var(--mono);font-size:.8rem;color:var(--sub);text-align:center}
+.slotrow{display:grid;grid-template-columns:30px 1fr 1fr auto;gap:8px;align-items:center}
+.slotrow b{font-family:var(--mono);font-size:.8rem;color:var(--sub);text-align:center}
+.wkbadge{display:inline-block;padding:3px 10px;border-radius:99px;background:var(--hero);color:var(--heroInk);font-size:.72rem;font-weight:800}
 .gap button{justify-self:start;background:transparent;color:var(--sub);font-size:.74rem;font-weight:700;padding:3px 8px;border-radius:10px}
 .gap button::before{content:"+ ";color:var(--accent)}
 .gap button:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
@@ -403,6 +418,34 @@ function anchorsFor(d){
   if(p.prayer&&p.prayer.on){const pt=prayerTimes(d,p.prayer.lat,p.prayer.lng,p.prayer.tz,p.prayer.method);PRAYERS.forEach(([id,n])=>out.push({id,name:n,m:pt[id],kind:id==="sunrise"?"info":"prayer"}))}
   return out;
 }
+/* ---------- class timetable (числитель / знаменатель) ---------- */
+const DOW=["Пн","Вт","Ср","Чт","Пт","Сб","Вс"],DOWF=["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"];
+const DEF_SLOTS=[["08:00","09:20"],["09:30","10:50"],["11:00","12:20"],["12:30","13:50"],["14:00","15:20"],["15:30","16:50"],["17:00","18:20"]];
+const mondayOf=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return x};
+function ttOf(){const p=S.profile;if(!p.tt)p.tt={on:false,alt:true,ref:dkey(mondayOf(new Date())),slots:DEF_SLOTS.map(x=>({s:x[0],e:x[1]})),num:{},den:{}};const t=p.tt;t.num=t.num||{};t.den=t.den||{};t.slots=t.slots||[];return t}
+function weekKind(d){const t=S.profile.tt;if(!t||!t.alt)return "num";const a=mondayOf(new Date(t.ref+"T00:00")),b=mondayOf(d);const w=Math.round((b-a)/6048e5);return ((w%2)+2)%2===0?"num":"den"}
+const WKN={num:"числитель",den:"знаменатель"};
+function classesFor(d){const t=S.profile.tt;if(!t||!t.on)return[];const dw=(d.getDay()+6)%7,wk=weekKind(d),row=((t[wk]||{})[dw])||{};
+  return Object.keys(row).filter(i=>row[i]&&String(row[i]).trim()&&t.slots[i]).map(i=>({id:"c"+i,name:String(row[i]).trim(),m:toMin(t.slots[i].s),end:toMin(t.slots[i].e),n:+i+1,wk:t.alt?wk:null}))}
+function parseTT(txt){
+  const out={num:null,den:null,slots:[]};let mode="both",curDay=null;const DAYRX=/^(пн|вт|ср|чт|пт|сб|вс|пон|втор|сред|чет|пят|суб|вос)[а-яё]*\.?\s*[:\-–]?\s*/i;
+  const dayIdx=w=>["пн","вт","ср","чт","пт","сб","вс"].indexOf(w.slice(0,2).toLowerCase().replace("по","пн").replace("ве","вт").replace("се","ср").replace("че","чт").replace("пя","пт").replace("су","сб").replace("во","вс"));
+  const put=(wk,dw,i,name)=>{out[wk]=out[wk]||{};out[wk][dw]=out[wk][dw]||{};out[wk][dw][i]=name};
+  let n=0;
+  for(let raw of txt.split(/\r?\n/)){let l=raw.trim().replace(/\s+/g," ");if(!l)continue;
+    if(/^пары\b|^время пар/i.test(l)){mode="slots";continue}
+    if(/^числ/i.test(l)){mode="num";curDay=null;continue}
+    if(/^знам/i.test(l)){mode="den";curDay=null;continue}
+    if(/^(обе|кажд|все недели)/i.test(l)){mode="both";curDay=null;continue}
+    let m=l.match(/^(\d{1,2})\s*[).:\-–]?\s*(\d{1,2}[:.]\d{2})\s*[-–—]\s*(\d{1,2}[:.]\d{2})\s*$/);
+    if(m&&(mode==="slots"||!curDay)){const f=x=>{const[a,b]=x.replace(".",":").split(":");return pad(+a)+":"+b};out.slots[+m[1]-1]={s:f(m[2]),e:f(m[3])};continue}
+    const dm=l.match(DAYRX);if(dm&&mode==="slots")mode="both";
+    if(dm){const di=dayIdx(dm[1]);if(di>=0){curDay=di;l=l.slice(dm[0].length).trim();if(!l)continue}}
+    m=l.match(/^(\d{1,2})\s*(?:пара)?\s*[).:\-–]?\s*(.+)$/i);
+    if(m&&curDay!=null){const i=+m[1]-1,name=m[2].replace(/^[—–\-]\s*/,"").trim();if(!name||/^[—–\-]$/.test(name))continue;
+      if(mode==="num"||mode==="both")put("num",curDay,i,name);if(mode==="den"||mode==="both")put("den",curDay,i,name);n++}
+  }
+  out.count=n;return out}
 function dayProgress(k){const x=S.days[k];if(!x)return 0;const hb=S.habits.length,bl=(x.blocks||[]).length;const tot=hb+bl;if(!tot)return 0;return (S.habits.filter(h=>x.habits&&x.habits[h.id]).length+(x.blocks||[]).filter(b=>b.done).length)/tot}
 
 /* ---------- palettes ---------- */
@@ -442,11 +485,13 @@ function tipCard(){const i=(tipIdx+Math.floor(Date.now()/864e5))%TIPS.length,t=T
 function renderToday(){
   const k=dkey(cur),d=day(k),todayK=dkey(new Date()),isToday=k===todayK;
   const anchors=anchorsFor(cur),buf=(S.profile.prayer&&S.profile.prayer.buffer)||0;
-  const items=anchors.map(a=>({...a,type:"anchor"})).concat(d.blocks.map(b=>({type:"block",b,m:toMin(b.s),end:toMin(b.e)})));
+  const classes=classesFor(cur);
+  const items=anchors.map(a=>({...a,type:"anchor"})).concat(classes.map(c=>({...c,type:"class"})),d.blocks.map(b=>({type:"block",b,m:toMin(b.s),end:toMin(b.e)})));
   items.sort((a,b)=>a.m-b.m||(a.type==="anchor"?-1:1));
   const prayers=anchors.filter(a=>a.kind==="prayer");
   const clash=b=>{const s=toMin(b.s),e=toMin(b.e);
     for(const p of prayers)if(p.m-buf<e&&p.m+10>s)return `Налезает на ${p.name} (${fromMin(p.m)}). Сдвинь блок.`;
+    for(const c of classes)if(c.m<e&&c.end>s)return `Налезает на пару «${c.name}» (${fromMin(c.m)}–${fromMin(c.end)}).`;
     for(const o of d.blocks)if(o!==b&&toMin(o.s)<e&&toMin(o.e)>s)return `Пересекается с «${o.t}».`;
     return null};
   const nowM=new Date().getHours()*60+new Date().getMinutes();
@@ -459,6 +504,9 @@ function renderToday(){
       const sub=it.kind==="prayer"?(buf?`намаз · запас ${buf} мин`:"намаз"):it.kind==="info"?"конец времени фаджра":"опорная точка";
       html+=`<div class="ti anchor"><div class="tm">${fromMin(it.m)}</div><div class="blk"><div class="anc"><div><div class="nm">${esc(it.name)}</div><div class="sub">${sub}</div></div>${it.kind==="prayer"?`<input type="checkbox" aria-label="${esc(it.name)} вовремя" data-act="pray" data-id="${it.id}" ${d.prayed[it.id]?"checked":""}>`:""}</div></div></div>`;
       prevEnd=Math.max(prevEnd??0,it.m);
+    }else if(it.type==="class"){
+      html+=`<div class="ti cls"><div class="tm">${fromMin(it.m)}<small>${fromMin(it.end)}</small></div><div class="blk"><div class="t"><b>${esc(it.name)}</b><div class="meta"><span>${it.n} пара</span>${it.wk?`<span>· ${WKN[it.wk]}</span>`:""}<span>· ${dur(it.end-it.m)}</span></div></div><button class="icon-btn" aria-label="Изменить расписание" data-act="opentt">•••</button></div></div>`;
+      prevEnd=Math.max(prevEnd??0,it.end);
     }else{
       const b=it.b,dir=dirOf(b.dir),cl=clash(b);
       html+=`<div class="ti ${cl?"clash":""}" style="--c:${cv(dir.c)}"><div class="tm">${esc(b.s)}<small>${esc(b.e)}</small></div><div class="blk ${b.done?"done":""}">
@@ -553,6 +601,36 @@ function renderGoals(){
   <div class="stack-lg">${welcome()}<div class="cols2 stack-lg">${cards}</div></div>`;
 }
 
+/* ---------- TIMETABLE ---------- */
+let ttView=null,ttDay=null;
+function renderTT(){
+  const t=ttOf(),nowWk=weekKind(new Date());if(!ttView)ttView=t.alt?nowWk:"num";if(ttDay==null)ttDay=Math.min(5,(new Date().getDay()+6)%7);
+  const wk=t.alt?ttView:"num",grid=t[wk]||{};
+  const head=`<tr><th class="slot"></th>${DOW.map((d,i)=>`<th>${d}</th>`).join("")}</tr>`;
+  const rows=t.slots.map((sl,i)=>`<tr><th class="slot">${i+1}<br>${esc(sl.s)}</th>${DOW.map((_,dw)=>{const v=((grid[dw]||{})[i])||"";return `<td><button class="${v?"has":""} ${dw===ttDay?"sel":""}" data-act="ttpick" data-d="${dw}">${esc(v)}</button></td>`}).join("")}</tr>`).join("");
+  const dayRow=grid[ttDay]||{};
+  return `<header class="phead"><div><div class="label">учёба${t.alt?" · эта неделя: "+WKN[nowWk]:""}</div><h1>Расписание <em>пар</em></h1></div></header>
+  <div class="stack-lg">
+  <section class="card stack"><div class="spread"><div><h2>Ставить пары в день</h2><div class="small muted">Пары появятся на «Сегодня», а блоки будут предупреждать, если налезают на них.</div></div><input type="checkbox" data-act="tton" ${t.on?"checked":""} aria-label="Ставить пары в день"></div>
+    <div class="spread"><div><b>Числитель и знаменатель</b><div class="small muted">Недели чередуются</div></div><input type="checkbox" data-act="ttalt" ${t.alt?"checked":""} aria-label="Числитель и знаменатель"></div>
+    ${t.alt?`<div class="spread"><span class="small" style="font-weight:700">Эта неделя</span><div class="seg"><button aria-pressed="${nowWk==="num"}" data-act="ttnow" data-w="num">Числитель</button><button aria-pressed="${nowWk==="den"}" data-act="ttnow" data-w="den">Знаменатель</button></div></div>`:""}</section>
+  <section class="card stack"><div class="spread"><h2>${t.alt?(wk==="num"?"Числитель":"Знаменатель"):"Неделя"}</h2>${t.alt?`<div class="seg"><button aria-pressed="${wk==="num"}" data-act="ttview" data-w="num">Числитель</button><button aria-pressed="${wk==="den"}" data-act="ttview" data-w="den">Знаменатель</button></div>`:""}</div>
+    <div class="ttwrap"><table class="tt" aria-label="Расписание">${head}${rows}</table></div>
+    <h3 style="margin:6px 0 0">${DOWF[ttDay]}</h3>
+    ${t.slots.map((sl,i)=>`<div class="ttrow"><b>${i+1}</b><input aria-label="${i+1} пара" placeholder="${esc(sl.s)}–${esc(sl.e)} · предмет" data-act="ttcell" data-d="${ttDay}" data-i="${i}" value="${esc(dayRow[i]||"")}"></div>`).join("")}
+    ${t.alt?`<div class="row"><button class="soft small" data-act="ttcopy">Скопировать ${wk==="num"?"в знаменатель":"в числитель"}</button><button class="ghost small" data-act="ttclear">Очистить ${wk==="num"?"числитель":"знаменатель"}</button></div>`:`<button class="ghost small" data-act="ttclear">Очистить неделю</button>`}</section>
+  <section class="card stack"><h2>Время пар</h2>
+    ${t.slots.map((sl,i)=>`<div class="slotrow"><b>${i+1}</b><input type="time" aria-label="Начало ${i+1} пары" data-act="ttslot" data-i="${i}" data-k="s" value="${esc(sl.s)}"><input type="time" aria-label="Конец ${i+1} пары" data-act="ttslot" data-i="${i}" data-k="e" value="${esc(sl.e)}"><button class="icon-btn" aria-label="Удалить пару" data-act="ttslotdel" data-i="${i}">×</button></div>`).join("")}
+    <button class="soft" data-act="ttslotadd">Добавить пару</button></section>
+  <section class="card stack"><h2>Вставить расписание текстом</h2>
+    <p class="small muted" style="margin:0">Скопируй расписание из EduPage, чата группы или заметок. Формат простой: строка «Числитель» или «Знаменатель», дальше день и пары. Без заголовка пары пойдут в обе недели.</p>
+    <textarea id="tt-import" rows="7" placeholder="Пары\n1 08:00-09:20\n2 09:30-10:50\nЧислитель\nПн\n1 Английский\n2 Алгоритмы\nЗнаменатель\nВт 1 Академическое письмо"></textarea>
+    <button data-act="ttimport">Вставить</button></section>
+  <section class="card stack"><h2>Скрин или EduPage</h2>
+    <p class="small muted" style="margin:0">Распознавание скриншота прямо здесь появится вместе с ИИ-помощником. Пока можно прислать скрин в поддержку (контакты в настройках), и расписание переведут в текст для вставки. Прямое подключение EduPage готовим: у EduPage нет открытого API, поэтому сначала проверим безопасный способ без передачи пароля.</p></section>
+  </div>`;
+}
+
 /* ---------- SETTINGS ---------- */
 function renderSettings(){
   const p=S.profile,pr=p.prayer||prayerCfg("Бишкек",false),pt=pr.on?prayerTimes(new Date(),pr.lat,pr.lng,pr.tz,pr.method):null;
@@ -569,6 +647,7 @@ function renderSettings(){
       <div class="field"><label class="label" for="s-asr">Аср</label><select id="s-asr" data-act="sasr"><option value="2" ${pr.method.asr===2?"selected":""}>Ханафитский</option><option value="1" ${pr.method.asr===1?"selected":""}>Стандартный</option></select></div>
       <div class="label">Поправка, мин</div><div class="grid3">${PRAYERS.map(([id,n])=>`<div class="field"><label class="small" for="adj-${id}">${n} <span class="mono muted">${fromMin(pt[id])}</span></label><input id="adj-${id}" type="number" step="1" data-act="adj" data-id="${id}" value="${pr.method.adj[id]||0}"></div>`).join("")}</div>
       <p class="small muted" style="margin:0">Это астрономический расчёт. Сверь с муфтиятом своего города и при необходимости поправь на несколько минут.</p>`:""}</section>
+  <section class="card stack"><div class="spread"><div><h2>Расписание пар</h2><div class="small muted">${p.tt&&p.tt.on?"Пары стоят в дне"+(p.tt.alt?" · сейчас "+WKN[weekKind(new Date())]:""):"Уроки и пары сами встают в день. Есть числитель и знаменатель."}</div></div><button class="soft" data-act="opentt">Открыть</button></div></section>
   <section class="card stack"><div class="spread"><h2>Цвета</h2><label class="row small" for="s-glass" style="font-weight:700">Стекло <input type="checkbox" id="s-glass" data-act="sglass" ${(S.ui||{}).glass!==false?"checked":""}></label></div>
     <div class="pals">${Object.entries(PALETTES).map(([id,p])=>`<button class="pal" style="--pbg:${p.bg};--pink:${p.ink}" aria-pressed="${((S.ui||{}).palette||"berry")===id}" data-act="palette" data-id="${id}"><span class="sw"><i style="background:${p.hero}"></i><i style="background:${p.t1}"></i><i style="background:${p.t2}"></i></span><b>${p.name}</b></button>`).join("")}</div></section>
   <section class="card stack"><h2>Направления жизни</h2>
@@ -659,8 +738,8 @@ const TABS=[["today","Сегодня"],["habits","Привычки"],["add",""],
 function render(){
   const y=window.scrollY;applyTheme();
   const top=`<div class="topbar"><div class="brand"><i>${esc((S.profile.name||"L").trim().charAt(0).toUpperCase()||"L")}</i>Life OS</div><nav class="toptabs" aria-label="Разделы">${TABS.filter(t=>t[0]!=="add").map(([id,n])=>`<button data-tab="${id}" ${id===tab?'aria-current="page"':""}>${n}</button>`).join("")}</nav>
-    <div class="topact"><button class="hot addtop" data-tab="add">+ Блок</button><button class="icon-round" data-act="${tab==="settings"?"back":"opensettings"}" aria-label="${tab==="settings"?"Закрыть настройки":"Настройки"}">${tab==="settings"?'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>':ICONS.settings}</button></div></div>`;
-  app.innerHTML=top+({today:renderToday,habits:renderHabits,review:renderReview,goals:renderGoals,settings:renderSettings})[tab]();
+    <div class="topact"><button class="hot addtop" data-tab="add">+ Блок</button><button class="icon-round" data-act="${tab==="settings"||tab==="tt"?"back":"opensettings"}" aria-label="${tab==="settings"||tab==="tt"?"Закрыть":"Настройки"}">${tab==="settings"||tab==="tt"?'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>':ICONS.settings}</button></div></div>`;
+  app.innerHTML=top+({today:renderToday,habits:renderHabits,review:renderReview,goals:renderGoals,settings:renderSettings,tt:renderTT})[tab]();
   document.getElementById("tabs").innerHTML=TABS.map(([id,n])=>id==="add"?`<button class="fab" data-tab="add" aria-label="Добавить блок"><span>${ICONS.add}</span></button>`:`<button data-tab="${id}" ${id===tab?'aria-current="page"':""}>${ICONS[id]}${n}</button>`).join("");
   window.scrollTo(0,y);
 }
@@ -678,6 +757,20 @@ document.addEventListener("click",e=>{
   else if(a==="pick"){const[y,m,dd]=el.dataset.k.split("-").map(Number);cur=new Date(y,m-1,dd);render()}
   else if(a==="opensettings"){tab="settings";render();window.scrollTo(0,0)}
   else if(a==="back"){tab="today";render()}
+  else if(a==="opentt"){tab="tt";render();window.scrollTo(0,0)}
+  else if(a==="ttpick"){ttDay=+el.dataset.d;render()}
+  else if(a==="ttview"){ttView=el.dataset.w;render()}
+  else if(a==="ttnow"){const t=ttOf(),m=mondayOf(new Date());t.ref=dkey(el.dataset.w==="num"?m:addDays(m,-7));ttView=el.dataset.w;save();render()}
+  else if(a==="ttcopy"){const t=ttOf(),from=ttView||"num",to=from==="num"?"den":"num";t[to]=JSON.parse(JSON.stringify(t[from]||{}));save();render();toast("Скопировано в "+WKN[to])}
+  else if(a==="ttclear"){const t=ttOf(),w=t.alt?(ttView||"num"):"num";t[w]={};if(!t.alt)t.den={};save();render()}
+  else if(a==="ttslotadd"){const t=ttOf(),last=t.slots[t.slots.length-1];const s=last?fromMin(toMin(last.e)+10):"08:00";t.slots.push({s,e:fromMin(toMin(s)+80)});save();render()}
+  else if(a==="ttslotdel"){const t=ttOf(),i=+el.dataset.i;t.slots.splice(i,1);for(const w of["num","den"])for(const dw in t[w]){const r=t[w][dw],nr={};Object.keys(r).forEach(k=>{k=+k;if(k<i)nr[k]=r[k];else if(k>i)nr[k-1]=r[k]});t[w][dw]=nr}save();render()}
+  else if(a==="ttimport"){const txt=(document.getElementById("tt-import")||{}).value||"",r=parseTT(txt),t=ttOf();
+    if(!r.count&&!r.slots.filter(Boolean).length){toast("Не нашёл пар. Проверь формат: «Пн 1 Предмет»");return}
+    r.slots.forEach((x,i)=>{if(x)t.slots[i]=x});for(let i=0;i<t.slots.length;i++)if(!t.slots[i])t.slots[i]={s:"08:00",e:"09:20"};
+    if(r.num)t.num=r.num;if(r.den)t.den=r.den;if(r.num&&r.den&&JSON.stringify(r.num)!==JSON.stringify(r.den))t.alt=true;
+    const maxI=Math.max(-1,...["num","den"].flatMap(w=>Object.values(t[w]||{}).flatMap(o=>Object.keys(o).map(Number))));while(t.slots.length<=maxI){const l=t.slots[t.slots.length-1];const s=l?fromMin(toMin(l.e)+10):"08:00";t.slots.push({s,e:fromMin(toMin(s)+80)})}
+    t.on=true;save();render();toast("Вставлено пар: "+r.count)}
   else if(a==="addblock")blockSheet(null,{s:el.dataset.s,e:el.dataset.e});
   else if(a==="editblock")blockSheet(day().blocks.find(b=>b.id===el.dataset.id));
   else if(a==="delblock"){const d=day();d.blocks=d.blocks.filter(b=>b.id!==el.dataset.id);save();layer.innerHTML="";render();toast("Блок удалён")}
@@ -715,6 +808,9 @@ document.addEventListener("change",e=>{
   if(a==="pray"){day().prayed[el.dataset.id]=el.checked;save();render()}
   else if(a==="bdone"){const b=day().blocks.find(x=>x.id===el.dataset.id);b.done=el.checked;save();render()}
   else if(a==="hab"){day(dkey(new Date())).habits[el.dataset.id]=el.checked;save();render()}
+  else if(a==="tton"){ttOf().on=el.checked;save();render()}
+  else if(a==="ttalt"){ttOf().alt=el.checked;save();render()}
+  else if(a==="ttslot"){ttOf().slots[+el.dataset.i][el.dataset.k]=el.value;save();render()}
   else if(a==="sglass"){S.ui={...(S.ui||{}),glass:el.checked};applyTheme();save()}
   else if(a==="sprayer"){S.profile.prayer={...(pr||prayerCfg("Бишкек",false)),on:el.checked};save();render()}
   else if(a==="scity"){S.profile.prayer={...prayerCfg(el.value,true),buffer:pr.buffer};save();render()}
@@ -737,6 +833,8 @@ document.addEventListener("input",e=>{
   else if(a==="sname"){S.profile.name=el.value;save()}
   else if(a==="aname"){S.profile.anchors.find(x=>x.id===ds.id).name=el.value;save()}
   else if(a==="dname"){S.dirs.find(x=>x.id===ds.id).name=el.value;save()}
+  else if(a==="ttcell"){const t=ttOf(),w=t.alt?(ttView||"num"):"num";t[w]=t[w]||{};const r=t[w][ds.d]=t[w][ds.d]||{};if(el.value.trim())r[ds.i]=el.value;else delete r[ds.i];if(!t.alt){t.den=t.den||{};t.den[ds.d]={...r}}save();
+    const cell=document.querySelector(`.tt button[data-d="${ds.d}"]`);const btns=document.querySelectorAll(`.tt tr:nth-child(${+ds.i+2}) td button`);const b=btns[+ds.d];if(b){b.textContent=el.value;b.classList.toggle("has",!!el.value.trim())}}
 });
 document.addEventListener("submit",async e=>{if(e.target.id!=="loginform")return;e.preventDefault();const em=document.getElementById("login-email").value.trim();const err=await signIn(em);toast(err?"Не получилось отправить: "+err.message:"Ссылка для входа отправлена на "+em)});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!layer.querySelector(".full"))layer.innerHTML="";if(e.key==="Enter"&&e.target.id==="ob-custom"){e.preventDefault();document.querySelector('[data-act="obcustom"]').click()}});
